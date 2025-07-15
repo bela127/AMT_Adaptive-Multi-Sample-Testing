@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "ATM"
+version = "0.2.0"
+description = "Adaptive multi-sample testing"
+authors = ["bela127 <bhb127@outlook.de>"]
+license = "MIT"
+packages = [
+    { include = "atm", from = "." }
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.10"
+numpy = "^2.0.2"
+scipy = "^1.13.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+mypy = "^0.910"
+black = "^21.6b0"
+flake8 = "^4.0.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[mypy]
+plugins = "numpy.typing.mypy_plugin"
