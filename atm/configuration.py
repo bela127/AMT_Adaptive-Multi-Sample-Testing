@@ -13,11 +13,19 @@ class Config():
     selection_mode:str = "ts" # selection mode = "adapt", "rand", "equal", "opt", "adapt.par", "adapt.slow"
     test_mode:str = "beta"
     coin_weights:str = "posdif"
-    significance:float = 0.05
+    significance:float|tuple = (0.05,0.025,0.001)
 
     def __post_init__(self):
-        if self.m == 0: self.p_diff = 0
-        if self.p_diff == 0: self.m = 0
+        self._check_m_p_diff()
+
+    def __setattr__(self, prop, val):
+        super().__setattr__(prop, val)
+        if prop == "p_diff" or prop == "m":
+            self._check_m_p_diff()
+    
+    def _check_m_p_diff(self):
+        if self.m == 0 and self.p_diff != 0: self.p_diff = 0
+        if self.p_diff == 0 and self.m != 0: self.m = 0
     
     def get_sel_name(self):
         return f"mode-{self.selection_mode}_coins-{self.n}_fake-{self.m}_pdiff-{self.p_diff*100:07.4f}_chance-{self.common_p*100:07.4f}_samplemax-{self.sample_size}_initialsize-{self.initial_size}_reps-{self.reps}"
@@ -45,6 +53,20 @@ class Config():
         self.reps = int(key_value["reps"]) #number of test repetitions
         self.common_p = float(key_value["chance"])/100
         self.p_diff = float(key_value["pdiff"])/100
+
+    def clone(self):
+        return Config(
+            n=self.n,
+            m=self.m,
+            sample_size=self.sample_size,
+            initial_size=self.initial_size,
+            reps=self.reps,
+            common_p=self.common_p,
+            p_diff=self.p_diff,
+            selection_mode=self.selection_mode,
+            test_mode=self.test_mode,
+            coin_weights=self.coin_weights
+        )
 
 
 def calc_coin_weights_posdif(conf: Config):
