@@ -12,7 +12,7 @@ if __name__ == "__main__":
                         m = m,
                         sample_size = 2000,
                         initial_size = 10,
-                        reps = 5000,
+                        reps = 2500,
                         common_p = 0.5,
                         p_diff = 0.05,
                         selection_mode = sel_mode,
@@ -21,6 +21,6 @@ if __name__ == "__main__":
                     )
 
 
-                    exp = Experiment(conf=conf, load_path="./coin_res/H0", save_path="./stat_res/H0")
+                    exp = Experiment(conf=conf, load_path="./coin_res/H0_test", save_path="./stat_res/H0_test")
                     exp.run_parallel()
                     exp.save()
