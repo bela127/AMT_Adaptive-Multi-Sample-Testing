@@ -140,5 +140,7 @@ log*
 eval
 poetry.lock
 coin_res/
-coin_plot/
 stat_res/
+test_res/
+power_plots/
+multi_stat_res/

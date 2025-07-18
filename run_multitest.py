@@ -8,7 +8,7 @@ from atm.multitest_runner import Experiment
 if __name__ == "__main__":
     for n in [5, 10, 15, 20]:
         for sel_mode in ["ts.5", "ts", "equal", "beta", "means", "mean.slow"]:# 
-            for test_mode in ["betabinom.pmf"]:
+            for test_mode in ["betabinom.comb"]:
                 for m in [0]:#[0,1]:
 
                     conf = Config(
@@ -22,6 +22,7 @@ if __name__ == "__main__":
                         selection_mode = sel_mode,
                         test_mode = test_mode,
                         coin_weights = "posdif",
+                        #significance=(0.05,)
                     )
 
 

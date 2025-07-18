@@ -13,6 +13,7 @@ class MultiTests():
             "betabinom.crit": self.betabinom_crit,
             "betabinom.pval": self.betabinom_pval,
             "betabinom.pmf": self.betabinom_pmf,
+            "betabinom.comb": self.betabinom_comb,
         }
 
         self.test = self.test_modes[test_mode]
@@ -121,3 +122,11 @@ class MultiTests():
         tests = p_values_two_sided < corr_alpha
 
         return tests
+    
+    def betabinom_comb(self, contingency):
+        coin_sum = np.sum(contingency, axis=0)
+        max_coin_sum = np.max(coin_sum)
+        if max_coin_sum > 500:
+            return self.betabinom_pval(contingency)
+        else:
+            return self.betabinom_pmf(contingency)

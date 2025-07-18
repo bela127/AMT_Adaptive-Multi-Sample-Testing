@@ -13,7 +13,7 @@ class Config():
     selection_mode:str = "ts" # selection mode = "adapt", "rand", "equal", "opt", "adapt.par", "adapt.slow"
     test_mode:str = "beta"
     coin_weights:str = "posdif"
-    significance:float|tuple = (0.05,0.025,0.001)
+    significance:tuple = (0.05,0.025,0.001)
 
     def __post_init__(self):
         self._check_m_p_diff()

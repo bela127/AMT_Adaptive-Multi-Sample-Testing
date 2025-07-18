@@ -7,7 +7,7 @@ from atm.configuration import Config
 from atm.multitest import MultiTests
 
 class Experiment():
-    def __init__(self, conf: Config, save_path = "./multi_stat_res", load_path = "./coin_res", batch_size=2) -> None:
+    def __init__(self, conf: Config, save_path = "./multi_stat_res", load_path = "./coin_res", batch_size=1) -> None:
         self.conf = conf
         self.save_path = save_path
         self.load_path = load_path
@@ -58,4 +58,4 @@ class Experiment():
         makedirs(self.save_path, exist_ok=True)
         stat_values = np.asarray(self.stat_values)
         name = self.conf.get_test_name()
-        np.save(f"{self.save_path}/multi_teststat_{name}.npy", stat_values)
+        np.save(f"{self.save_path}/multi.teststat_{name}.npy", stat_values)
