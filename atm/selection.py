@@ -103,10 +103,11 @@ class Selections():
 
     def coin_selection_mean(self, contingency):
 
-        coin_mean = np.mean(contingency, axis = 0)
+        coin_sum = np.sum(contingency, axis = 0)
+        coin_mean = contingency[0] / coin_sum
 
         coin1 = np.argmax(coin_mean)
-        coin2 = np.argmax(coin_mean)
+        coin2 = np.argmin(coin_mean)
 
         return coin1, coin2
 

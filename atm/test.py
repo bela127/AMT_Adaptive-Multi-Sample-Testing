@@ -64,17 +64,17 @@ def mean_test(contingency):
 
     null_sum = np.sum(null_cont, axis=0)
 
-    null_average = null_cont[0] / null_sum
+    null_average = null_cont[0] / null_sum #empiric p under H0 = of average coin
 
     coin_sum = np.sum(contingency, axis=0)
 
-    coin_average = contingency[0] / coin_sum
+    coin_average = contingency[0] / coin_sum #empiric p of coin
 
-    coin_error = null_average - coin_average
+    coin_error = (null_average - coin_average)**2
 
-    scaled_error = coin_error * coin_sum
+    scaled_error = coin_error * coin_sum # scale error by number of trials per coin, so that larger samples have more weight
 
-    average_error = np.sum(scaled_error, axis=0) / np.sum(coin_sum, axis=0)
+    average_error = np.sum(scaled_error, axis=0) / np.sum(coin_sum, axis=0) #divide by total number of trials to get average error
     
     return average_error
 
