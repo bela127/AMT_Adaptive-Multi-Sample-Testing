@@ -38,7 +38,7 @@ def plot_power(confs: list[Config], title, label, save, save_path: str = "./powe
 
 if __name__ == "__main__":
     for n in [5, 10, 15, 20]:
-        for test_mode in ["mean", "chi2","kw", "beta"]:
+        for test_mode in ["mean", "chi2","kw", "beta", "betabinom.comb"]:
             confs = []
             for sel_mode in ["ts.5", "ts", "equal", "beta", "means", "mean.slow"]:# 
                 conf = Config(
@@ -62,12 +62,12 @@ if __name__ == "__main__":
             def save(conf: Config, sig):
                 return f"test.mode-{conf.test_mode}_coins-{conf.n}_sig-{sig}"
             
-            plot_power(confs, title=title, label=label, save=save, load_path="./test_res/H1")
+            plot_power(confs, title=title, label=label, save=save, load_path="./test_res/H1", save_path = "./power_plots/sel.mode")
 
     for n in [5, 10, 15, 20]:
         for sel_mode in ["ts.5", "ts", "equal", "beta", "means", "mean.slow"]:# 
             confs = []
-            for test_mode in ["mean", "chi2","kw", "beta"]:# 
+            for test_mode in ["mean", "chi2","kw", "beta", "betabinom.comb"]:# 
                 conf = Config(
                     n = n,
                     m = 1,
@@ -89,9 +89,9 @@ if __name__ == "__main__":
             def save(conf: Config, sig):
                 return f"sel.mode-{conf.selection_mode}_coins-{conf.n}_sig-{sig}"
             
-            plot_power(confs, title=title, label=label, save=save, load_path="./test_res/H1")
+            plot_power(confs, title=title, label=label, save=save, load_path="./test_res/H1", save_path = "./power_plots/test.mode")
     
-    for test_mode in ["mean", "chi2","kw", "beta"]:
+    for test_mode in ["mean", "chi2","kw", "beta", "betabinom.comb"]:
         for sel_mode in ["ts.5", "ts", "equal", "beta", "means", "mean.slow"]:# 
             confs = []
             for n in [5, 10, 15, 20]:
@@ -116,4 +116,31 @@ if __name__ == "__main__":
             def save(conf: Config, sig):
                 return f"sel.mode-{conf.selection_mode}_test.mode-{conf.test_mode}_sig-{sig}"
             
-            plot_power(confs, title=title, label=label, save=save, load_path="./test_res/H1")
+            plot_power(confs, title=title, label=label, save=save, load_path="./test_res/H1", save_path = "./power_plots/coins")
+        
+    for n in [5, 10, 15, 20]:
+        confs = []
+        for test_mode in ["mean", "chi2","kw", "beta", "betabinom.comb"]:
+            for sel_mode in ["equal", "beta"]:# 
+                conf = Config(
+                    n = n,
+                    m = 1,
+                    sample_size = 2000,
+                    initial_size = 10,
+                    reps = 5000,
+                    common_p = 0.5,
+                    p_diff = 0.05,
+                    selection_mode = sel_mode,
+                    test_mode = test_mode,
+                    coin_weights = "posdif",
+                )
+                confs.append(conf)
+
+            def title(conf: Config, sig):
+                return rf"Power for {conf.n} coins, equal vs beta selection at $\alpha={sig}$"
+            def label(conf: Config):
+                return f"{conf.selection_mode} selection, {conf.test_mode} test"
+            def save(conf: Config, sig):
+                return f"test.mode-equal.vs.beta_coins-{conf.n}_sig-{sig}"
+            
+            plot_power(confs, title=title, label=label, save=save, load_path="./test_res/H1", save_path = "./power_plots/equal.vs.beta")
