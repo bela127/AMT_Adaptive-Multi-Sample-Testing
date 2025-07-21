@@ -4,8 +4,8 @@ from atm.configuration import Config
 from atm.sel_runner import Experiment
 
 if __name__ == "__main__":
-    for n in [20]:
-        for mode in ["ts.5", "ts", "equal", "beta", "means", "mean.slow"]:# 
+    for n in [5,10,15,20]:
+        for mode in ["ts.5", "ts", "equal", "beta","means", "mean.slow"]:#  
 
             conf = Config(
                 n = n,
@@ -16,8 +16,6 @@ if __name__ == "__main__":
                 common_p = 0.5,
                 p_diff = 0.05,
                 selection_mode = mode,
-                test_mode = "beta",
-                coin_weights = "posdif"
             )
 
 
