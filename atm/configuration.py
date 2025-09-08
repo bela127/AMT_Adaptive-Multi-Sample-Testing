@@ -14,18 +14,22 @@ class Config():
     test_mode:str = "beta"
     coin_weights:str = "posdif"
     significance:tuple = (0.05,0.025,0.001)
+    dataset:str = ""
 
     def __post_init__(self):
-        self._check_m_p_diff()
+        self._check_m_p_diff("p_diff")
+        self._check_m_p_diff("m")
 
     def __setattr__(self, prop, val):
         super().__setattr__(prop, val)
         if prop == "p_diff" or prop == "m":
-            self._check_m_p_diff()
+            self._check_m_p_diff(prop)
     
-    def _check_m_p_diff(self):
-        if self.m == 0 and self.p_diff != 0: self.p_diff = 0
-        if self.p_diff == 0 and self.m != 0: self.m = 0
+    def _check_m_p_diff(self, prop):
+        if prop == "p_diff":
+            if self.p_diff == 0 and self.m != 0: self.m = 0
+        if prop == "m":
+            if self.m == 0 and self.p_diff != 0: self.p_diff = 0
     
     def get_sel_name(self):
         return f"mode-{self.selection_mode}_coins-{self.n}_fake-{self.m}_pdiff-{self.p_diff*100:07.4f}_chance-{self.common_p*100:07.4f}_samplemax-{self.sample_size}_initialsize-{self.initial_size}_reps-{self.reps}"

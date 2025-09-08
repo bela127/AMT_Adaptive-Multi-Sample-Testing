@@ -2,6 +2,7 @@ from multiprocessing import Pool, cpu_count
 from os import makedirs
 
 import numpy as np
+import pandas as pd
 
 
 from atm.configuration import Config, coin_weights
@@ -14,13 +15,13 @@ class Experiment():
     def __init__(self, conf: Config, save_path = "./coin_res") -> None:
         self.save_path = save_path
         self.conf = conf
-        print(self.conf.get_sel_name())
         
 
     def get_data(self):
         self.ps = coin_weights[self.conf.coin_weights](self.conf)
         samples = np.random.binomial(1,self.ps,size=(self.conf.sample_size, self.conf.reps, self.conf.n))
         print(samples.shape)
+        print(self.conf.get_sel_name())
         return samples
     
 
@@ -86,3 +87,31 @@ class Experiment():
         selected_coin = np.asarray(self.stat_values)
         name = self.conf.get_sel_name()
         np.save(f"{self.save_path}/contingency_{name}.npy", selected_coin)
+
+class ExperimentReal(Experiment):
+
+    def __init__(self, conf: Config, save_path = "./coin_res", data_path = "./dataset/filtered") -> None:
+        self.data_path = data_path
+        super().__init__(conf=conf, save_path=save_path)
+    
+    def get_data(self):
+        contingency = self.load_data()
+        mean = contingency[0] / np.sum(contingency, axis=0)
+        self.conf.n = mean.shape[0]
+        self.conf.common_p = np.mean(mean)
+        if self.conf.m == 1:
+            self.conf.m = mean.shape[0]
+            self.conf.p_diff = mean.max() - mean.min()
+            self.ps = mean
+        if self.conf.m == 0:
+            self.ps = np.ones_like(mean)*self.conf.common_p
+        samples = np.random.binomial(1,self.ps,size=(self.conf.sample_size, self.conf.reps, self.conf.n))
+        print(samples.shape)
+        print(self.conf.get_sel_name())
+        return samples
+    
+    
+    def load_data(self):
+        name: str = self.conf.dataset
+        contingency = np.load(f"{self.data_path}/{name}.npy")
+        return contingency

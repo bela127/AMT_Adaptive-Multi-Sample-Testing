@@ -4,7 +4,7 @@ from atm.configuration import Config
 
 class Selections():
 
-    def __init__(self, conf: Config, samples = []) -> None:
+    def __init__(self, conf: Config, samples = None) -> None:
         self.m = conf.m
         self.n = conf.n
         self.sample_size = conf.sample_size
@@ -13,7 +13,7 @@ class Selections():
         sel_params = selection_mode.split(".")
 
         if selection_mode == "opt":
-            if samples:
+            if samples is not None:
                 self.init_opt(samples)
             else:
                 print("You have to call 'init_opt' to use opt selection mode.")
@@ -41,6 +41,7 @@ class Selections():
             "beta.null": self.coin_selection_beta_null,
             "beta.inf": self.coin_selection_beta_inf,
             "beta.inf2": self.coin_selection_beta_inf2,
+            "beta.med": self.coin_selection_beta_med,
             "means": self.coin_selection_mean,
             "mean.slow": self.coin_selection_mean_equal
         }
@@ -92,6 +93,27 @@ class Selections():
         comb_cont = np.sum(contingency, axis=1)[:,None]
         crit1 = beta.ppf(0.2, *(comb_cont-contingency+1))
         crit2 = beta.ppf(0.8, *(comb_cont-contingency+1))
+
+        p_low = beta.cdf(crit1, *(contingency+1))
+        p_high = 1-beta.cdf(crit2, *(contingency+1))
+
+        coin1 = np.argmax(p_low)
+        coin2 = np.argmax(p_high)
+
+        return coin1, coin2
+    
+    def coin_selection_beta_med(self, contingency):
+        coin_sum = np.sum(contingency, axis = 0)
+        coin_mean = contingency[0] / coin_sum
+        total_sum = np.sum(coin_sum, axis=0)
+        aver_count = total_sum / contingency.shape[1]
+
+        median_mean = np.median(coin_mean, axis=0)
+
+        fr = beta(median_mean*aver_count+1, (1 - median_mean)*aver_count+1)
+
+        crit1 = fr.ppf(0.2)
+        crit2 = fr.ppf(0.8)
 
         p_low = beta.cdf(crit1, *(contingency+1))
         p_high = 1-beta.cdf(crit2, *(contingency+1))
