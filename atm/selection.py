@@ -1,6 +1,6 @@
 from scipy.stats import chi2_contingency, beta
 import numpy as np
-from atm.configuration import Config
+from amt.configuration import Config
 
 class Selections():
 

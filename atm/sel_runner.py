@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 
 
-from atm.configuration import Config, coin_weights
-from atm.selection import Selections
+from amt.configuration import Config, coin_weights
+from amt.selection import Selections
 
 
 

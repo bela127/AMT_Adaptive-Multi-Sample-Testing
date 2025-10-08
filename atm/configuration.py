@@ -7,13 +7,13 @@ class Config():
     m:int = 0 #m<n number of plated coins
     sample_size:int = 2000 #number of trials per coin
     initial_size:int = 10 #initial_size < sample_size
-    reps:int = 5000 #number of test repetitions
+    reps:int = 10000 #number of test repetitions
     common_p:float = 0.5
     p_diff:float = 0.05 #Difference in p for plated coins = 0.25 0.1 .05 .01 .005
     selection_mode:str = "ts" # selection mode = "adapt", "rand", "equal", "opt", "adapt.par", "adapt.slow"
     test_mode:str = "beta"
     coin_weights:str = "posdif"
-    significance:tuple = (0.05,0.025,0.001)
+    significance:tuple = (0.05,0.025,0.01)
     dataset:str = ""
 
     def __post_init__(self):

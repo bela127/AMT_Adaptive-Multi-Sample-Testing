@@ -5,8 +5,8 @@ from matplotlib import pyplot as plt
 import matplotlib.lines as mlines
 
 
-from atm.configuration import Config
-from atm.utils import translate_names, create_fig, save_fig, plot_power
+from amt.configuration import Config
+from amt.utils import translate_names, create_fig, save_fig, plot_power
 
 if __name__ == "__main__":  
     for test_mode in ["mean", "chi2","kw", "beta", "betabinom.comb"]:#"mean", "chi2","kw", "beta", "betabinom.comb"
@@ -18,7 +18,7 @@ if __name__ == "__main__":
                     m = 1,
                     sample_size = 2000,
                     initial_size = 10,
-                    reps = 5000,
+                    reps = 10000,
                     common_p = 0.5,
                     p_diff = 0.05,
                     selection_mode = sel_mode,

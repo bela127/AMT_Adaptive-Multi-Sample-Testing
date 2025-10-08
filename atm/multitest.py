@@ -1,7 +1,7 @@
 from scipy.stats import betabinom
 import numpy as np
 
-from atm.configuration import Config
+from amt.configuration import Config
 
 class MultiTests():
 
@@ -79,7 +79,6 @@ class MultiTests():
         # 1. Calculate PMF at observed heads for all observations
         # This is already vectorized by SciPy
         pmf_at_observed_h = fbb.pmf(heads)
-        # pmf_at_observed_h now has shape (5, 50, 20)
 
         # 2. Determine the maximum possible 'n' across all observations
         # This sets the size of our 'virtual' arange.
@@ -90,18 +89,16 @@ class MultiTests():
         # Shape: (max_coin_sum + 1,)
         k_values = np.arange(max_coin_sum + 1)[:, None, None, None]# Reshape k_values for broadcasting
 
-        # 4. Calculate PMF for ALL possible 'k' values, for EACH of your (5,50,20) distributions.
-        # This requires broadcasting 'k_values' against your distribution parameters.
+        # 4. Calculate PMF for ALL possible 'k' values, for EACH of the distributions.
+        # This requires broadcasting 'k_values' against the distribution parameters.
         # We need to reshape k_values to (max_coin_sum + 1, 1, 1, 1) to broadcast correctly
-        # against coin_sum, null_con1, null_con2 which are (5,50,20).
-        # The output 'all_pmfs_broadcasted' will have shape (max_coin_sum + 1, 5, 50, 20)
+        # against coin_sum, null_con1, null_con2.
         all_pmfs_broadcasted = fbb.pmf(k_values)
 
         # 5. Mask out invalid PMF values for each observation
         # Where 'k' (row index) > 'n' (coin_sum), the PMF should effectively be 0.
         # We can use k_values and coin_sum for this.
         # Create a mask that is True where k <= n for each distribution
-        # Shape: (max_coin_sum + 1, 5, 50, 20)
         valid_k_mask = k_values <= coin_sum
 
         # Apply the mask: set invalid PMF values to 0
@@ -110,7 +107,7 @@ class MultiTests():
 
         # 6. Sum PMFs that are <= pmf_at_observed_h for each distribution
         # This comparison must also broadcast.
-        # The comparison is between:
+        # The comparison is between [with example data shape (5,50,20) = (samples, iterations, repetitions)]:
         #   - all_pmfs_broadcasted_masked (shape max_coin_sum+1, 5,50,20)
         #   - pmf_at_observed_h (shape 5,50,20) - needs to be broadcasted to (1, 5,50,20)
         # The result of the comparison will be boolean, (max_coin_sum+1, 5,50,20)
@@ -126,7 +123,7 @@ class MultiTests():
     def betabinom_comb(self, contingency):
         coin_sum = np.sum(contingency, axis=0)
         max_coin_sum = np.max(coin_sum)
-        if max_coin_sum > 500:
+        if max_coin_sum > 500: # threshold at which we switch from PMF to approximate PVAL method, i.e., when n=500 is large enough
             return self.betabinom_pval(contingency)
         else:
             return self.betabinom_pmf(contingency)

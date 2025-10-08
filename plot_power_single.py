@@ -3,7 +3,7 @@ from os import makedirs
 import numpy as np
 from matplotlib import pyplot as plt
 
-from atm.configuration import Config
+from amt.configuration import Config
 
 
 def plot_power(confs: list[Config], title, label, save, save_path: str = "./power_plots", load_path = "./test_res") -> None:
@@ -38,27 +38,21 @@ def plot_power(confs: list[Config], title, label, save, save_path: str = "./powe
 
 if __name__ == "__main__":
     confs = []
-    for n in [20]:#5, 10, 15, 20
-        for test_mode in ["betabinom.comb"]:#"mean", "chi2","kw", "beta", "betabinom.comb"
-            for sel_mode in ["equal", "beta", "ts", "mean.slow", "beta.med"]:# "ts.5", "ts", "equal", "beta", "means", "mean.slow"
+    for n in [5, 10, 15, 20]:#5, 10, 15, 20
+        for sel_mode in ["equal", "beta", "ts", "mean.slow", "beta.med"]:# "ts.5", "ts", "equal", "beta", "means", "mean.slow"
                 
-                if sel_mode == "ts" or sel_mode == "mean.slow"or sel_mode == "beta.med":
-                    rep = 2500
-                else:
-                    rep = 1000
-                conf = Config(
-                    n = n,
-                    m = 1,
-                    sample_size = 2000,
-                    initial_size = 10,
-                    reps = rep,
-                    common_p = 0.5,
-                    p_diff = 0.15,
-                    selection_mode = sel_mode,
-                    test_mode = test_mode,
-                    coin_weights = "posdif",
-                )
-                confs.append(conf)
+            conf = Config(
+                n = n,
+                m = 1,
+                sample_size = 2000,
+                initial_size = 10,
+                reps = 10000,
+                common_p = 0.5,
+                p_diff = 0.05,
+                selection_mode = sel_mode,
+                test_mode = "betabinom.comb",
+            )
+            confs.append(conf)
 
     def title(conf: Config, sig):
         return rf"Power for {conf.n} coins with {conf.test_mode} test at $\alpha={sig}$"

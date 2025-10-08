@@ -1,7 +1,7 @@
 from scipy.stats import chi2_contingency, beta
 import numpy as np
 
-from atm.configuration import Config
+from amt.configuration import Config
 
 class Tests():
 
@@ -11,7 +11,7 @@ class Tests():
         self.test_modes = {
             "chi2": chi2_test,
             "beta": beta_dist_test,
-            "beta.sum2": beta_sum_test,
+            "beta.sum": beta_sum_test,
             "count": count_test,
             "kw": kw_test,
             "mean": mean_test

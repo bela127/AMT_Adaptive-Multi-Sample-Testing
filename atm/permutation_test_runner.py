@@ -4,7 +4,7 @@ from os import makedirs
 import numpy as np
 from numpy._typing._array_like import NDArray
 
-from atm.configuration import Config
+from amt.configuration import Config
 
 class Experiment():
     def __init__(self, conf: Config, null_conf: Config, save_path = "./test_res", load_path = "./stat_res", null_path = "./stat_res") -> None:

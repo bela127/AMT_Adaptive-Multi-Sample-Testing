@@ -4,8 +4,8 @@ from os import makedirs
 import numpy as np
 from numpy._typing._array_like import NDArray
 
-from atm.configuration import Config
-from atm.test import Tests
+from amt.configuration import Config
+from amt.test import Tests
 
 class Experiment():
     def __init__(self, conf: Config, save_path = "./stat_res", load_path = "./coin_res") -> None:

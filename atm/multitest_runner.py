@@ -3,8 +3,8 @@ from os import makedirs
 
 import numpy as np
 
-from atm.configuration import Config
-from atm.multitest import MultiTests
+from amt.configuration import Config
+from amt.multitest import MultiTests
 
 class Experiment():
     def __init__(self, conf: Config, save_path = "./multi_stat_res", load_path = "./coin_res", batch_size=1) -> None:

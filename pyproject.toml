@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "ATM"
+name = "AMT"
 version = "0.2.0"
 description = "Adaptive multi-sample testing"
-authors = ["bela127 <bhb127@outlook.de>"]
+authors = ["anonym127 <anonym127@outlook.de>"]
 license = "MIT"
 packages = [
-    { include = "atm", from = "." }
+    { include = "amt", from = "." }
 ]
 
 [tool.poetry.dependencies]

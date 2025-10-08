@@ -3,7 +3,7 @@ from os import makedirs
 import numpy as np
 from matplotlib import pyplot as plt
 
-from atm.configuration import Config
+from amt.configuration import Config
 
 if __name__ == "__main__":
     load_path = "./coin_res"
@@ -13,18 +13,14 @@ if __name__ == "__main__":
     data = {}
     for n in [20]:#
         for sel_mode in ["ts", "equal", "beta", "mean.slow"]:# "ts.5", "ts", "equal", "beta", "means", "mean.slow"
-            if sel_mode == "ts" or sel_mode == "mean.slow":
-                rep = 2500
-            else:
-                rep = 1000
             conf = Config(
                 n = n,
                 m = 1,
                 sample_size = 2000,
                 initial_size = 10,
-                reps = rep,
+                reps = 10000,
                 common_p = 0.5,
-                p_diff = 0.15,
+                p_diff = 0.05,
                 selection_mode = sel_mode,
                 coin_weights = "posdif",
             )

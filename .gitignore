@@ -143,5 +143,7 @@ coin_res/
 stat_res/
 test_res/
 power_plots/
+coin_plot/
 alpha_plots/
 multi_stat_res/
+dataset/

@@ -1,8 +1,8 @@
 import re
 import numpy as np
 
-from atm.configuration import Config
-from atm.utils import translate_keys
+from amt.configuration import Config
+from amt.utils import translate_keys
 
 code = r'''
 \documentclass{article}

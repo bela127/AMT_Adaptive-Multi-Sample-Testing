@@ -6,16 +6,16 @@ import matplotlib.lines as mlines
 
 
 from amt.configuration import Config
-from amt.utils import translate_names, create_fig, save_fig, plot_power
+from amt.utils import translate_names, create_fig, save_fig, plot_alpha
 
 if __name__ == "__main__":
-    for n in [5, 10, 15, 20]:#5, 10, 15, 20
-        for sel_mode in ["beta.med", "ts", "equal", "mean.slow"]:# "ts.5", "ts", "equal", "beta", "means", "mean.slow", "beta.med"
+    for test_mode in ["mean", "chi2","kw", "beta", "betabinom.comb"]:#"mean", "chi2","kw", "beta", "betabinom.comb"
+        for sel_mode in ["ts.5", "ts", "equal", "means", "mean.slow", "beta.med"]:# "ts.5", "ts", "equal", "beta", "means", "mean.slow", "beta.med"
             confs = []
-            for test_mode in ["mean", "chi2", "kw", "beta", "betabinom.comb"]:# "mean", "chi2","kw", "beta", "betabinom.comb"
+            for n in [5, 10, 15, 20]:#5, 10, 15, 20
                 conf = Config(
                     n = n,
-                    m = 1,
+                    m = 0,
                     sample_size = 2000,
                     initial_size = 10,
                     reps = 10000,
@@ -29,12 +29,13 @@ if __name__ == "__main__":
 
             def title(conf: Config, sig):
                 test_name, sel_name = translate_names(conf.test_mode, conf.selection_mode)
-                return rf"{sel_name} selection at $\alpha={sig}$ for {conf.n} coins"
+                return rf'''Type I error for {test_name} test
+with selection {sel_name} at sign. $\alpha={sig}$'''
             def label(conf: Config):
                 test_name, sel_name = translate_names(conf.test_mode, conf.selection_mode)
-                return f"{test_name} test"
+                return  rf"$n = {conf.n}$"
             def save(conf: Config, sig):
-                return f"sel.mode-{conf.selection_mode}_coins-{conf.n}_sig-{sig}"
+                return f"sel.mode-{conf.selection_mode}_test.mode-{conf.test_mode}_sig-{sig}"
             
-            colors = ['#192d48', '#2b6f39', '#a1794a', '#d490c6', '#c3d9f3']
-            plot_power(confs, title_func=title, label_func=label, save_func=save, load_path="./test_res", save_path = "./power_plots/test.mode", line_colors=colors)
+            colors = ['#163d4e', '#54792f', '#d07e93', '#c1caf3']
+            plot_alpha(confs, title_func=title, label_func=label, save_func=save, load_path="./test_res/H0_test", save_path = "./alpha_plots/coins", line_colors=colors)

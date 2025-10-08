@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 from scipy.stats import beta
 
 
-from atm.configuration import Config
+from amt.configuration import Config
 
 if __name__ == "__main__":
     load_path = "./coin_res"
@@ -19,9 +19,9 @@ if __name__ == "__main__":
             m = 1,
             sample_size = 2000,
             initial_size = 10,
-            reps = 1000,
+            reps = 10000,
             common_p = 0.5,
-            p_diff = 0.15,
+            p_diff = 0.05,
             selection_mode = "beta",
             coin_weights = "posdif",
         )

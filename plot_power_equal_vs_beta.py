@@ -6,8 +6,8 @@ import matplotlib.lines as mlines
 from matplotlib import rcParams
 
 
-from atm.configuration import Config
-from atm.utils import translate_names, create_fig, save_fig, plot_power, translate_test_colors
+from amt.configuration import Config
+from amt.utils import translate_names, create_fig, save_fig, plot_power, translate_test_colors
 
 
 def post(fig, ax, confs, sig):
@@ -111,7 +111,7 @@ if __name__ == "__main__":
                     m = 1,
                     sample_size = 2000,
                     initial_size = 10,
-                    reps = 5000,
+                    reps = 10000,
                     common_p = 0.5,
                     p_diff = 0.05,
                     selection_mode = sel_mode,
@@ -137,4 +137,4 @@ if __name__ == "__main__":
             def save(conf: Config, sig):
                 return f"test.mode-equal.vs.beta_coins-{conf.n}_sig-{sig}"
             
-            plot_power(confs, title_func=title, label_func=label, save_func=save, post_func=post, load_path="./test_res/H1", save_path = "./power_plots/equal.vs.beta", line_colors=line_colors, line_styles=line_styles)
+            plot_power(confs, title_func=title, label_func=label, save_func=save, post_func=post, load_path="./test_res", save_path = "./power_plots/equal.vs.beta", line_colors=line_colors, line_styles=line_styles)

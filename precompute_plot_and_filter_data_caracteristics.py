@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from atm.configuration import Config
-from atm.sel_runner import ExperimentReal
+from amt.configuration import Config
+from amt.sel_runner import ExperimentReal
 
 if __name__ == "__main__":
     filtered_data = []

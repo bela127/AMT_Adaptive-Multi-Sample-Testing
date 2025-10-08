@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import rcParams
 
-from atm.configuration import Config
+from amt.configuration import Config
 
 
 def translate_keys(test_mode, sel_mode):
@@ -135,7 +135,6 @@ def plot_power(confs: list[Config], title_func, label_func, save_func, post_func
     conf = confs[0]
 
     makedirs(save_path, exist_ok=True)
-    index = np.arange(conf.sample_size - conf.initial_size + 1)
     sizes = np.arange(0,conf.sample_size - conf.initial_size + 1)
 
     def plot_data(sizes, conf, line_style = None, line_color=None):
@@ -181,4 +180,59 @@ def plot_power(confs: list[Config], title_func, label_func, save_func, post_func
             plt.legend(ncol=2)
 
         save_fig(fig, f"power.curve_{save_func(conf,sig)}", save_path)
+        plt.close()
+
+
+def plot_alpha(confs: list[Config], title_func, label_func, save_func, post_func = None, save_path: str = "./power_plots", load_path = "./test_res", line_styles = [], line_colors = []) -> None:
+
+    conf = confs[0]
+
+    makedirs(save_path, exist_ok=True)
+    sizes = np.arange(0,conf.sample_size - conf.initial_size + 1)
+
+    def plot_data(sizes, conf, line_style = None, line_color=None):
+        name = conf.get_test_name()
+        power = np.load(f"{load_path}/power_{name}.npy")
+        print(name)
+        rcParams["lines.dashed_pattern"] = (5,10)
+
+        if line_style is not None and line_color is not None:
+            plt.plot(sizes, power[i], label=label_func(conf), color=line_color, linestyle=line_style)
+        elif line_style is not None:
+            plt.plot(sizes, power[i], label=label_func(conf), linestyle=line_style)
+        elif line_color is not None:
+            plt.plot(sizes, power[i], label=label_func(conf), color=line_color)
+        else:
+            plt.plot(sizes, power[i], label=label_func(conf))
+    
+    for i, sig in enumerate(confs[0].significance):
+        fig, axs = create_fig(hfrac=0.85)
+
+        if line_styles and line_colors:
+            for conf, line_style, line_color in zip(confs, line_styles, line_colors):
+                plot_data(sizes, conf, line_style, line_color)
+        elif line_styles:
+            for conf, line_style in zip(confs, line_styles):
+                plot_data(sizes, conf, line_style = line_style)
+        elif line_colors:
+            for conf, line_color in zip(confs, line_colors):
+                plot_data(sizes, conf, line_color = line_color)
+        else:
+            for conf in confs:
+                plot_data(sizes, conf)
+
+        plt.plot([0,sizes[-1]], [sig,sig], label=rf"sign. $\alpha={sig}$")
+            
+        plt.title(title_func(conf, sig))
+        plt.xlabel("Iterations")
+        plt.ylabel("Type I Error")
+        plt.ylim(0, sig + 0.4*sig)
+        plt.grid()
+
+        if post_func is not None:
+            post_func(fig, axs, confs, sig)
+        else:
+            plt.legend(ncol=2)
+
+        save_fig(fig, f"alpha.curve_{save_func(conf,sig)}", save_path)
         plt.close()
