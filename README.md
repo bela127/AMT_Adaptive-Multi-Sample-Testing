@@ -1,7 +1,7 @@
 # AMT: Adaptive Multi-Sample Testing for Data Efficiency on Binomial Data
 
 This repository contains all code required to reproduce the experiments of the paper "AMT: Adaptive Multi-Sample Testing for Data Efficiency on Binomial Data".
-Further it contains the [supplementary material](https://anonymous.4open.science/api/repo/AMT_Adaptive-Multi-Sample-Testing-836D/file/AMT_SupMat.pdf) for [the accompanying publication](https://anonymous.4open.science/api/repo/AMT_Adaptive-Multi-Sample-Testing-836D/file/AMT_Paper.pdf).
+Further it contains the [supplementary material](https://anonymous.4open.science/r/AMT_Adaptive-Multi-Sample-Testing-836D/AMT_SupMat.pdf) for [the accompanying publication](https://anonymous.4open.science/r/AMT_Adaptive-Multi-Sample-Testing-836D/AMT_Paper.pdf).
 
 To facilitate the code setup, we use pyenv and poetry, for dependency and python version management. 
 In the following we describe the installation of these tools and the code, we will then describe how to reproduce the experiments.
