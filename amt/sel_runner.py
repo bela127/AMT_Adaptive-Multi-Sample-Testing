@@ -90,7 +90,7 @@ class Experiment():
 
 class ExperimentReal(Experiment):
 
-    def __init__(self, conf: Config, save_path = "./coin_res", data_path = "./dataset/filtered") -> None:
+    def __init__(self, conf: Config, save_path = "./coin_res", data_path = "./real_datasets") -> None:
         self.data_path = data_path
         super().__init__(conf=conf, save_path=save_path)
     

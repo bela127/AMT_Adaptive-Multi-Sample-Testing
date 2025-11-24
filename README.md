@@ -2,7 +2,7 @@
 
 This repository contains all code required to reproduce the experiments of the paper "AMT: Data-Efficient Adaptive Multi-Sample Testing for Binomial Data".
 
-For dependency and python version management, we use pyenv and poetry, to facilitate the code setup. 
+To facilitate the code setup, we use pyenv and poetry, for dependency and python version management. 
 In the following we describe the installation of these tools and the code, we will then describe how to reproduce the experiments.
 
 ## Installation:
