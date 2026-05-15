@@ -2,6 +2,7 @@ from multiprocessing import Pool, cpu_count
 from os import makedirs
 
 import numpy as np
+from numpy._typing._array_like import NDArray
 import pandas as pd
 
 
@@ -18,8 +19,15 @@ class Experiment():
         
 
     def get_data(self):
+        rng = np.random.default_rng()
         self.ps = coin_weights[self.conf.coin_weights](self.conf)
-        samples = np.random.binomial(1,self.ps,size=(self.conf.sample_size, self.conf.reps, self.conf.n))
+        samples = rng.binomial(1,self.ps,size=(self.conf.sample_size, self.conf.reps, self.conf.n))
+        if self.conf.hyp == 0:
+            swapped = np.moveaxis(samples, 1, 0)
+            flattened_per_rep = swapped.reshape(self.conf.reps, -1)
+            shuffled_flat = rng.permuted(flattened_per_rep, axis=1)
+            shuffled_swapped = shuffled_flat.reshape(self.conf.reps, self.conf.sample_size, self.conf.n)
+            samples = np.moveaxis(shuffled_swapped, 0, 1)
         print(samples.shape)
         print(self.conf.get_sel_name())
         return samples

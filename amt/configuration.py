@@ -1,6 +1,8 @@
 import numpy as np
 from dataclasses import dataclass
 
+from numpy._typing._array_like import NDArray
+
 @dataclass
 class Config():
     n:int = 20 # number of coins = 5, 10, 15, 20
@@ -15,6 +17,7 @@ class Config():
     coin_weights:str = "posdif"
     significance:tuple = (0.05,0.025,0.01)
     dataset:str = ""
+    hyp:int = 1
 
     def __post_init__(self):
         self._check_m_p_diff("p_diff")
@@ -32,10 +35,10 @@ class Config():
             if self.m == 0 and self.p_diff != 0: self.p_diff = 0
     
     def get_sel_name(self):
-        return f"mode-{self.selection_mode}_coins-{self.n}_fake-{self.m}_pdiff-{self.p_diff*100:07.4f}_chance-{self.common_p*100:07.4f}_samplemax-{self.sample_size}_initialsize-{self.initial_size}_reps-{self.reps}"
+        return f"mode-{self.selection_mode}_coins-{self.n}_fake-{self.m}_pdiff-{self.p_diff*100:07.4f}_chance-{self.common_p*100:07.4f}_hyp-{self.hyp}_samplemax-{self.sample_size}_initialsize-{self.initial_size}_reps-{self.reps}"
 
     def get_test_name(self):
-        return f"test.mode-{self.test_mode}_sel.mode-{self.selection_mode}_coins-{self.n}_fake-{self.m}_pdiff-{self.p_diff*100:07.4f}_chance-{self.common_p*100:07.4f}_samplemax-{self.sample_size}_initialsize-{self.initial_size}_reps-{self.reps}"
+        return f"test.mode-{self.test_mode}_sel.mode-{self.selection_mode}_coins-{self.n}_fake-{self.m}_pdiff-{self.p_diff*100:07.4f}_chance-{self.common_p*100:07.4f}_hyp-{self.hyp}_samplemax-{self.sample_size}_initialsize-{self.initial_size}_reps-{self.reps}"
 
     def load_from_name(self, file_name):
         params=file_name.split(sep="_")
@@ -49,6 +52,12 @@ class Config():
             self.selection_mode = key_value["sel.mode"]
         except:
             self.selection_mode = key_value["mode"]
+        
+        try:
+            self.hyp = int(key_value["hyp"])
+        except:
+            self.hyp = 1
+            print(f"hyp not found in file name, potentially old file naming format, defaulting to {self.hyp}")
 
         self.n = int(key_value["coins"]) # number of coins = 10, 15, 20, 25, 40, 70, 100
         self.m = int(key_value["fake"]) #m<n number of plated coins
@@ -69,7 +78,10 @@ class Config():
             p_diff=self.p_diff,
             selection_mode=self.selection_mode,
             test_mode=self.test_mode,
-            coin_weights=self.coin_weights
+            coin_weights=self.coin_weights,
+            hyp=self.hyp,
+            dataset=self.dataset,
+            significance=self.significance,
         )
 
 
