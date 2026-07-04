@@ -56,6 +56,6 @@ class Experiment():
     
     def save(self):
         makedirs(self.save_path, exist_ok=True)
-        stat_values = np.asarray(self.stat_values)
+        stat_values = np.asarray(self.stat_values).astype(bool)
         name = self.conf.get_test_name()
         np.save(f"{self.save_path}/multi.teststat_{name}.npy", stat_values)

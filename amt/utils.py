@@ -28,6 +28,7 @@ def translate_names(test_mode, sel_mode):
         "chi2": "Chi-Squared",
         "kw": "Kruskal-Wallis",
         "beta": "Beta",
+        "eval": "E-Value",
         }
     sel_translations = {
         "mean.slow": "Mean Slow",
@@ -138,8 +139,12 @@ def plot_power(confs: list[Config], title_func, label_func, save_func, post_func
     sizes = np.arange(0,conf.sample_size - conf.initial_size + 1)
 
     def plot_data(sizes, conf, line_style = None, line_color=None):
-        name = conf.get_test_name()
-        power = np.load(f"{load_path}/power_{name}.npy")
+        try:
+            name = conf.get_test_name()
+            power = np.load(f"{load_path}/power_{name}.npy")
+        except:
+            name = conf.get_test_name(version=0)
+            power = np.load(f"{load_path}/power_{name}.npy")
         print(name)
         rcParams["lines.dashed_pattern"] = (5,10)
 
@@ -190,7 +195,7 @@ def plot_alpha(confs: list[Config], title_func, label_func, save_func, post_func
     makedirs(save_path, exist_ok=True)
     sizes = np.arange(0,conf.sample_size - conf.initial_size + 1)
 
-    def plot_data(sizes, conf, line_style = None, line_color=None):
+    def plot_data(i, sizes, conf, line_style = None, line_color=None):
         name = conf.get_test_name()
         power = np.load(f"{load_path}/power_{name}.npy")
         print(name)
@@ -213,13 +218,13 @@ def plot_alpha(confs: list[Config], title_func, label_func, save_func, post_func
                 plot_data(sizes, conf, line_style, line_color)
         elif line_styles:
             for conf, line_style in zip(confs, line_styles):
-                plot_data(sizes, conf, line_style = line_style)
+                plot_data(i, sizes, conf, line_style = line_style)
         elif line_colors:
             for conf, line_color in zip(confs, line_colors):
-                plot_data(sizes, conf, line_color = line_color)
+                plot_data(i, sizes, conf, line_color = line_color)
         else:
             for conf in confs:
-                plot_data(sizes, conf)
+                plot_data(i, sizes, conf)
 
         plt.plot([0,sizes[-1]], [sig,sig], label=rf"sign. $\alpha={sig}$")
             

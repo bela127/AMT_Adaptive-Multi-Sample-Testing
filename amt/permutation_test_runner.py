@@ -16,9 +16,15 @@ class Experiment():
         print(self.conf.get_test_name())
 
     def load_data(self):
-        teststat = np.load(f"{self.load_path}/teststat_{self.conf.get_test_name()}.npy")
+        try:
+            teststat = np.load(f"{self.load_path}/teststat_{self.conf.get_test_name()}.npy")
+        except:
+            teststat = np.load(f"{self.load_path}/teststat_{self.conf.get_test_name(version=0)}.npy")
         print(teststat.shape)
-        nullstat = np.load(f"{self.null_path}/teststat_{self.null_conf.get_test_name()}.npy")
+        try:
+            nullstat = np.load(f"{self.null_path}/teststat_{self.null_conf.get_test_name()}.npy")
+        except: 
+            nullstat = np.load(f"{self.null_path}/teststat_{self.null_conf.get_test_name(version=0)}.npy")
         print(nullstat.shape)
         return teststat, nullstat
 
@@ -42,7 +48,7 @@ class Experiment():
     
     def save(self):
         makedirs(self.save_path, exist_ok=True)
-        rejected = np.asarray(self.rejected)
+        rejected = np.asarray(self.rejected).astype(bool)
         name = self.conf.get_test_name()
         np.save(f"{self.save_path}/reject_{name}.npy", rejected)
 

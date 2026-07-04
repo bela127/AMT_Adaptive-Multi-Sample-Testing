@@ -22,7 +22,7 @@ def calc_power(test):
 
 def run(conf: Config, load_path: str = "./multi_stat_res", save_path: str = "stat_res"):
     tests = load_data(conf, load_path)
-    test = combined_test(tests)
+    test = combined_test(tests).astype(bool)
     power = calc_power(test)
 
     makedirs(save_path, exist_ok=True)

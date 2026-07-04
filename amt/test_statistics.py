@@ -1,9 +1,10 @@
 from scipy.stats import chi2_contingency, beta
+from scipy.special import betaln
 import numpy as np
 
 from amt.configuration import Config
 
-class Tests():
+class TestStatistic():
 
     def __init__(self, conf: Config, samples = []) -> None:
         test_mode = conf.test_mode
@@ -14,7 +15,8 @@ class Tests():
             "beta.sum": beta_sum_test,
             "count": count_test,
             "kw": kw_test,
-            "mean": mean_test
+            "mean": mean_test,
+            "eval": eval_test
         }
 
         self.test = self.test_modes[test_mode]
@@ -56,6 +58,64 @@ def beta_sum_test(contingency):
     p_max = np.maximum(p_low, p_high)
 
     return np.sum(p_max)
+
+def eval_test(contingency, alpha0=1.0, beta0=1.0, alpha1=1.0, beta1=1.0):
+    """
+    Calculates the Fully Bayesian E-variable for testing coin homogeneity.
+    
+    Parameters:
+    -----------
+    contingency : numpy.ndarray
+        A 2D array of shape (2, num_coins). 
+        contingency[0] contains the count of heads (successes) for each coin.
+        contingency[1] contains the count of tails (failures) for each coin.
+    alpha0, beta0 : float
+        Hyperparameters for the shared Beta prior under H0 (Null).
+    alpha1, beta1 : float
+        Hyperparameters for the individual Beta priors under H1 (Alternative).
+        
+    Returns:
+    --------
+    float
+        The computed E-value.
+    """
+    
+    # Ensure input is a numpy array
+    contingency = np.asarray(contingency)
+    
+    # Extract heads (z_x) and tails (N_x - z_x) for each coin
+    z_x = contingency[0]
+    tails_x = contingency[1]
+    
+    # ---------------------------------------------------------
+    # 1. Calculate log Q (Alternative H1: Many Coins)
+    # ---------------------------------------------------------
+    # Calculate the log marginal likelihood for each coin individually
+    log_q_x = betaln(z_x + alpha1, tails_x + beta1) - betaln(alpha1, beta1)
+    
+    # Sum the log likelihoods across all coins (equivalent to taking the product)
+    log_Q = np.sum(log_q_x)
+    
+    # ---------------------------------------------------------
+    # 2. Calculate log P0 (Null H0: Single Coin)
+    # ---------------------------------------------------------
+    # Pool all data together
+    Z_total = np.sum(z_x)
+    Tails_total = np.sum(tails_x)
+    
+    # Calculate the log marginal likelihood for the pooled data
+    log_P0 = betaln(Z_total + alpha0, Tails_total + beta0) - betaln(alpha0, beta0)
+    
+    # ---------------------------------------------------------
+    # 3. Calculate Final E-Variable
+    # ---------------------------------------------------------
+    # log(E) = log(Q) - log(P0)
+    log_E = log_Q - log_P0
+    
+    # Convert back to standard scale
+    e_value = np.exp(log_E)
+    
+    return e_value
 
 def mean_test(contingency):
 

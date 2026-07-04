@@ -1,6 +1,7 @@
 from scipy.stats import chi2_contingency, beta
 import numpy as np
 from amt.configuration import Config
+from amt.bandit_bounds import bandit_bounds
 
 class Selections():
 
@@ -8,8 +9,8 @@ class Selections():
         self.m = conf.m
         self.n = conf.n
         self.sample_size = conf.sample_size
-        selection_mode = conf.selection_mode
 
+        selection_mode = conf.selection_mode
         sel_params = selection_mode.split(".")
 
         if selection_mode == "opt":
@@ -24,9 +25,14 @@ class Selections():
                 self.smoothing = 1
             else:
                 self.smoothing = int(sel_params[1])
+                selection_mode = "ts"
+
+        if sel_params[0] == "bandit":
+            selection_mode = "bandit"
 
         
         self.selection_modes = {
+            "bandit": self.get_bandit_selection(sel_params[1], conf),
             "adapt": self.coin_selection_adapt,
             "rand": self.coin_selection_random,
             "equal": self.coin_selection_equal,#
@@ -36,18 +42,32 @@ class Selections():
             "adapt.cons": self.coin_selection_adapt_cons,
             "beta": self.coin_selection_beta,#
             "ts": self.coin_selection_ts,
-            "ts.5": self.coin_selection_ts,
             "beta.rand": self.coin_selection_beta_rand,
             "beta.null": self.coin_selection_beta_null,
             "beta.inf": self.coin_selection_beta_inf,
             "beta.inf2": self.coin_selection_beta_inf2,
             "beta.med": self.coin_selection_beta_med,
+            "beta.max": self.coin_selection_beta_max,
             "means": self.coin_selection_mean,
             "mean.slow": self.coin_selection_mean_equal
         }
-
-
+        
         self.select = self.selection_modes[selection_mode]
+
+    def get_bandit_selection(self, selection_mode, conf: Config):
+        bandit_selection_modes = {
+            "max": coin_selection_by_bound_max,
+            "ratio": coin_selection_by_bound_ratio
+        }
+
+        bandit_selection = bandit_selection_modes[selection_mode]
+        bandit_bound = bandit_bounds[conf.bandit_kind]
+
+        def selection_function(contingency):
+            return bandit_selection(contingency, lambda cont: bandit_bound(cont, conf))
+
+        return selection_function
+
 
 
     def init_opt(self, samples):
@@ -88,6 +108,29 @@ class Selections():
             partitions = np.argpartition(obs_nrs,-2)
             return partitions[-2:]
 
+    def coin_selection_mean(self, contingency):
+
+        coin_sum = np.sum(contingency, axis = 0)
+        coin_mean = contingency[0] / coin_sum
+
+        coin1 = np.argmax(coin_mean)
+        coin2 = np.argmin(coin_mean)
+
+        return coin1, coin2
+
+    def coin_selection_ts(self, contingency):
+
+        comb_cont = np.sum(contingency, axis=1)[:,None]
+        frv = beta(*(comb_cont-contingency+1))
+
+        samples = frv.rvs(size=(self.smoothing, contingency.shape[-1]))
+        s_mean = np.mean(samples, axis=0)
+
+        coin1 = np.argmax(s_mean)
+        coin2 = np.argmin(s_mean)
+
+        return coin1, coin2
+
     def coin_selection_beta(self, contingency):
 
         comb_cont = np.sum(contingency, axis=1)[:,None]
@@ -123,30 +166,17 @@ class Selections():
 
         return coin1, coin2
 
-    def coin_selection_mean(self, contingency):
+    def coin_selection_beta_max(self, contingency):
 
-        coin_sum = np.sum(contingency, axis = 0)
-        coin_mean = contingency[0] / coin_sum
+        fr = beta(*(contingency+1))
 
-        coin1 = np.argmax(coin_mean)
-        coin2 = np.argmin(coin_mean)
+        crit_low = fr.ppf(0.2)
+        crit_high = fr.ppf(0.8)
 
-        return coin1, coin2
-
-    def coin_selection_ts(self, contingency):
-
-        comb_cont = np.sum(contingency, axis=1)[:,None]
-        frv = beta(*(comb_cont-contingency+1))
-
-        samples = frv.rvs(size=(self.smoothing, contingency.shape[-1]))
-        s_mean = np.mean(samples, axis=0)
-
-        coin1 = np.argmax(s_mean)
-        coin2 = np.argmin(s_mean)
+        coin1 = np.argmin(crit_low)
+        coin2 = np.argmax(crit_high)
 
         return coin1, coin2
-
-
 
     def coin_selection_beta_null(self, contingency):
 
@@ -270,4 +300,76 @@ class Selections():
         else:
             return self.coin_selection_concentrate(contingency)
 
+def coin_selection_by_bound_ratio(contingency, bound_function):
+    """
+    Type: Decoupled Functional Interval Ratio Selection (True Asymmetric Beta_Med).
+    Goal: Maximize interval penetration relative to the true asymmetric width,
+          anchored around the true empirical median to balance targeted divergence 
+          optimization with uncertainty extraction.
+    """
+    # 1. Execute the unified bound function to pull exact parameters
+    coin_mean, U, L = bound_function(contingency)
+    
+    coin_sum = np.sum(contingency, axis=0)
+    
+    # 2. Calculate the true width of the asymmetric intervals
+    width = U - L
+    width = np.where(width == 0, 1e-8, width) # Protect against zero-width limits
+    
+    # 3. CORRECTED: Establish baseline anchor using the true empirical means
+    median_anchor = np.median(coin_mean)
+    
+    # 4. Dynamic fence margin scaled as half the average interval width
+    delta_margin = 0.5 * np.mean(width)
+    crit_low = median_anchor - delta_margin
+    crit_high = median_anchor + delta_margin
+    
+    # Force unpulled arms to maximum uncertainty space to maintain valid exploration
+    U_eff = np.where(coin_sum == 0, 1.0, U)
+    L_eff = np.where(coin_sum == 0, 0.0, L)
+    width_eff = np.where(coin_sum == 0, 1.0, width)
+    
+    # 5. Compute penetration efficiency ratios
+    ratio_low = (crit_low - L_eff) / width_eff
+    ratio_high = (U_eff - crit_high) / width_eff
+    
+    coin1 = np.argmax(ratio_low)
+    coin2 = np.argmax(ratio_high)
+    
+    # 6. Single-arm boundary dominance tracking (Overlap protection)
+    if coin1 == coin2:
+        sort_idx = np.argsort(ratio_high)
+        coin2 = sort_idx[-2] if sort_idx[-1] == coin1 else sort_idx[-1]
+        
+    return coin1, coin2
 
+def coin_selection_by_bound_max(contingency, bound_function):
+    """
+    Type: Decoupled Functional Extreme-Boundary Selection (Standard Bandit Baseline).
+    Goal: Find the stream maximizing the upper bound potential and the stream 
+          minimizing the lower bound potential independently in O(N) time.
+    """
+    # 1. Execute the unified bound function to extract raw asymmetric horizons
+    # Expected return shape for each: np.ndarray of shape (N,)
+    _, U, L = bound_function(contingency)
+    
+    coin_sum = np.sum(contingency, axis=0)
+    
+    # 2. Force unpulled arms to maximum uncertainty extremes to seed initial data
+    U_eff = np.where(coin_sum == 0, 1.0, U)
+    L_eff = np.where(coin_sum == 0, 0.0, L)
+    
+    # 3. Standard Bandit Targeting: Maximize Upper Bound and Minimize Lower Bound
+    # coin1 tracks the lowest lower bound (chasing lower divergence or high uncertainty)
+    coin1 = np.argmin(L_eff)
+    # coin2 tracks the highest upper bound (chasing upper divergence or high uncertainty)
+    coin2 = np.argmax(U_eff)
+    
+    # 4. Single-Arm Overlap Protection
+    # If the same unobserved or massive-variance arm occupies both absolute extremes,
+    # route the second allocation slot to the runner-up upper bound to maintain a valid pair.
+    if coin1 == coin2:
+        sort_idx = np.argsort(U_eff)
+        coin2 = sort_idx[-2] if sort_idx[-1] == coin1 else sort_idx[-1]
+        
+    return coin1, coin2

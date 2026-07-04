@@ -1,5 +1,5 @@
 from amt.configuration import Config
-from amt.test_runner import Experiment
+from amt.test_runner import StatisticExperiment
 
 datasets = ['contingency_data-arabica.clean_value-Moisture Percentage_by-Harvest Year', 'contingency_data-arabica.clean_value-Acidity_by-Harvest Year', 'contingency_data-arabica.clean_value-Category Two Defects_by-Harvest Year', 'contingency_data-arabica.clean_value-Flavor_by-Color', 'contingency_data-arabica.clean_value-Acidity_by-Color', 'contingency_data-arabica.clean_value-Moisture Percentage_by-Color', 'contingency_data-arabica.clean_value-Flavor_by-Country of Origin', 'contingency_data-arabica.clean_value-Category Two Defects_by-Country of Origin', 'contingency_data-arabica.clean_value-Aftertaste_by-Country of Origin']
 ms = [4,4,4,9,9,9,14,14,14]
@@ -24,7 +24,7 @@ if __name__ == "__main__":
                             common_p=p/100,
                             p_diff=0
                         )
-                        exp = Experiment(conf=conf, load_path=f"./coin_res/real_h0/{dataset}", save_path=f"./stat_res/real_h0/{dataset}")
+                        exp = StatisticExperiment(conf=conf, load_path=f"./coin_res/real_h0/{dataset}", save_path=f"./stat_res/real_h0/{dataset}")
 
                     else:
                         conf = Config(
@@ -39,7 +39,7 @@ if __name__ == "__main__":
                             common_p=p/100,
                             p_diff=pdiff/100
                         )
-                        exp = Experiment(conf=conf, load_path=f"./coin_res/real/{dataset}", save_path=f"./stat_res/real/{dataset}")
+                        exp = StatisticExperiment(conf=conf, load_path=f"./coin_res/real/{dataset}", save_path=f"./stat_res/real/{dataset}")
                     exp.run_parallel()
                     exp.save()
 

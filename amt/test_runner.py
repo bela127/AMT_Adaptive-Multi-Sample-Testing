@@ -2,21 +2,25 @@ from multiprocessing import Pool, cpu_count
 from os import makedirs
 
 import numpy as np
-from numpy._typing._array_like import NDArray
 
 from amt.configuration import Config
-from amt.test import Tests
+from amt.test_statistics import TestStatistic
+from amt.tests import Test
+
 
 class Experiment():
     def __init__(self, conf: Config, save_path = "./stat_res", load_path = "./coin_res") -> None:
         self.conf = conf
         self.save_path = save_path
         self.load_path = load_path
-        self.test = Tests(conf=self.conf)
         print(self.conf.get_test_name())
 
     def load_data(self):
-        contingency = np.load(f"{self.load_path}/contingency_{self.conf.get_sel_name()}.npy")
+        try:
+            contingency = np.load(f"{self.load_path}/contingency_{self.conf.get_sel_name()}.npy")
+        except:
+            print(f"contingency_{self.conf.get_sel_name()}.npy not found, trying version=0")
+            contingency = np.load(f"{self.load_path}/contingency_{self.conf.get_sel_name(version=0)}.npy")
         contingency = np.transpose(contingency,axes=(1,2,3,0))
         print(contingency.shape)
         return contingency
@@ -47,7 +51,7 @@ class Experiment():
     def run_parallel(self):
         contingency = self.load_data()
 
-        stat_values = [] 
+        results = [] 
         pool_size = int((cpu_count()+0.5)/1.1)
         with Pool(pool_size) as pool:
             splits, part = self.calc_splits(contingency)
@@ -60,27 +64,59 @@ class Experiment():
                 # report the value to show progress
                 b+=1
                 print(b)
-                stat_values.append(result)
-        stat_values = np.concatenate(stat_values, axis=0)
-        self.stat_values = stat_values
-        return stat_values
+                results.append(result)
+        results = np.concatenate(results, axis=0)
+        self.results = results
+        return results
 
     def run(self):
         contingency = self.load_data()
-        stat_values = self.run_test(contingency)
-        self.stat_values = stat_values
-        return stat_values
+        results = self.run_test(contingency)
+        self.results = results
+        return results
     
     def run_test(self, contingency):
+        raise NotImplementedError("This method should be implemented in subclasses.")
+    
+    def save(self):
+        raise NotImplementedError("This method should be implemented in subclasses.")
+
+class StatisticExperiment(Experiment):
+    def __init__(self, conf: Config, save_path = "./stat_res", load_path = "./coin_res") -> None:
+        super().__init__(conf=conf, save_path=save_path, load_path=load_path)
+
+    
+    def run_test(self, contingency):
+        stat = TestStatistic(conf=self.conf)
+        i, r = contingency.shape[2], contingency.shape[3]
+        stat_results = np.empty((r, i))
+        for idx_i in range(i):
+            for idx_r in range(r):
+                stat_results[idx_r, idx_i] = stat.test(contingency[:, :, idx_i, idx_r])
+        return stat_results
+    
+    def save(self):
+        makedirs(self.save_path, exist_ok=True)
+        stat_results = np.asarray(self.results)
+        name = self.conf.get_test_name()
+        np.save(f"{self.save_path}/teststat_{name}.npy", stat_results)
+
+
+class TestExperiment(Experiment):
+    def __init__(self, conf: Config, save_path = "./test_res", load_path = "./coin_res") -> None:
+        super().__init__(conf=conf, save_path=save_path, load_path=load_path)
+    
+    def run_test(self, contingency):
+        test = Test(conf=self.conf)
         i, r = contingency.shape[2], contingency.shape[3]
         test_results = np.empty((r, i))
         for idx_i in range(i):
             for idx_r in range(r):
-                test_results[idx_r, idx_i] = self.test.test(contingency[:, :, idx_i, idx_r])
+                test_results[idx_r, idx_i] = test.test(contingency[:, :, idx_i, idx_r], conf=self.conf)
         return test_results
     
     def save(self):
         makedirs(self.save_path, exist_ok=True)
-        stat_values = np.asarray(self.stat_values)
+        test_results = np.asarray(self.results)[None,...].astype(bool)
         name = self.conf.get_test_name()
-        np.save(f"{self.save_path}/teststat_{name}.npy", stat_values)
+        np.save(f"{self.save_path}/reject_{name}.npy", test_results)
