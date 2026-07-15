@@ -86,7 +86,7 @@ checkpoints/
 logdir/
 
 # pyenv
-.python-version
+#.python-version
 
 # celery beat schedule file
 celerybeat-schedule
@@ -151,3 +151,4 @@ real_datasets/
 bandit_res/
 time_benchmark/
 old_code_backup/
+exp_results
