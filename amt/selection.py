@@ -1,4 +1,5 @@
 from scipy.stats import chi2_contingency, beta
+from scipy.special import betaln
 import numpy as np
 from amt.configuration import Config
 from amt.bandit_bounds import bandit_bounds
@@ -27,12 +28,9 @@ class Selections():
                 self.smoothing = int(sel_params[1])
                 selection_mode = "ts"
 
-        if sel_params[0] == "bandit":
-            selection_mode = "bandit"
-
         
         self.selection_modes = {
-            "bandit": self.get_bandit_selection(sel_params[1], conf),
+            "evar": self.coin_selection_e_variable,
             "adapt": self.coin_selection_adapt,
             "rand": self.coin_selection_random,
             "equal": self.coin_selection_equal,#
@@ -51,6 +49,10 @@ class Selections():
             "means": self.coin_selection_mean,
             "mean.slow": self.coin_selection_mean_equal
         }
+
+        if sel_params[0] == "bandit":
+            selection_mode = "bandit"
+            self.selection_modes["bandit"] = self.get_bandit_selection(sel_params[1], conf)
         
         self.select = self.selection_modes[selection_mode]
 
@@ -85,6 +87,39 @@ class Selections():
 
         self.opt_coin1 = np.argmax(p_low)
         self.opt_coin2 = np.argmax(p_high)
+
+
+    def coin_selection_e_variable(self, contingency, alpha1=1.0, beta1=1.0):
+        """
+        Selection mechanism based on the localized e variables.
+        This adaptively targets the streams maximizing the alternative hypothesis likelihood,
+        simplifying the theoretical proofs for Growth Rate Optimality.
+        """
+        z_arms = contingency[0, :]
+        tails_arms = contingency[1, :]
+        
+        z_total = np.sum(z_arms)
+        tails_total = np.sum(tails_arms)
+        
+        z_rest = z_total - z_arms
+        tails_rest = tails_total - tails_arms
+        
+        # Calculate the log marginal likelihoods for the partitioned alternative hypotheses
+        log_q_s = betaln(z_arms + alpha1, tails_arms + beta1) - betaln(alpha1, beta1)
+        log_q_rest = betaln(z_rest + alpha1, tails_rest + beta1) - betaln(alpha1, beta1)
+        
+        # Total localized alternative log likelihood
+        log_Q_matrix = log_q_s + log_q_rest
+        
+        # The global null is identical for all arms, meaning maximizing the alternative 
+        # directly maximizes the local e variable. We extract the indices of the highest values.
+        sorted_indices = np.argsort(log_Q_matrix)
+        
+        # Return the two most divergent streams for subsequent sampling
+        coin1 = sorted_indices[-1]
+        coin2 = sorted_indices[-2]
+        
+        return coin1, coin2
 
     def coin_selection_random(self, contingency):
         return np.random.choice(10,size=2,replace=False)
@@ -272,7 +307,7 @@ class Selections():
                     p = 0
                     print(f"missing data -> sampled more")
 
-                if p <= current_best:
+                if p <= current_best: # type: ignore
                     current_best = p
                     best_coin1 = i
                     best_coin2 = j

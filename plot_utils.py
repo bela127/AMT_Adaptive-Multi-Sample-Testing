@@ -50,12 +50,19 @@ TEST_GROUPS = {
 
 SELECTION_GROUPS = {
     "rand":          ("Uniform Random",             "baseline"),
-    "ts":            ("Thompson Sampling",          "bayesian_alloc"),
-    "beta.max":      ("Beta Extreme Value (Max)",   "legacy_heuristic"),
-    "beta.med":      ("Beta Spatial Center (Med)",  "legacy_heuristic"),
-    "bandit.max":    ("Asymmetric Boundary Max",    "bandit_framework"),
-    "bandit.ratio":  ("Interval Penetration Ratio", "bandit_framework")
+    "ts":            ("Thompson Sampling",          "bayesian_beta"),
+    "beta.max":      ("Beta Extreme Value",   "bayesian_beta"),
+    "beta.med":      ("Beta Spatial Center (Med)",  "bayesian_beta"),
+    "evar":          ("LOO E-Var",  "e_vars"),
 }
+
+for b_kind, (label, group_key) in  TEST_GROUPS.items():
+    selection_modes = {
+        "bandit.max":    "Extreme Value",
+        "bandit.ratio":  "Interval Ratio"
+    }
+    for sel_mode, sel_label in selection_modes.items():
+        SELECTION_GROUPS[f"{sel_mode}.{b_kind}"] = (f"{sel_label} {label}", group_key)
 
 STYLE_CYCLE = [
     {"linestyle": "-",  "alpha": 1.0, "lw": 2.2, "marker": "o"}, 
@@ -83,7 +90,38 @@ def generate_palette_map(source_dict, sns_palette_name="cubehelix"):
 
 # Build explicit separate palettes so colors match their context properties
 TEST_PALETTE = generate_palette_map(TEST_GROUPS, "cubehelix")
-SELECTION_PALETTE = generate_palette_map(SELECTION_GROUPS, "rocket")
+SELECTION_PALETTE = generate_palette_map(SELECTION_GROUPS, "cubehelix")
+
+def merge_selection_kinds(non_bandit_sel, bandit_sel, bandit_bounds):
+    selection_kinds = []
+    # Add non-bandit allocation baselines
+    for sel in non_bandit_sel:
+        selection_kinds.append((sel, None))
+        
+    # Dynamically match every active bound function with your tracking allocators
+    for b_kind in bandit_bounds:
+        for sel in bandit_sel:
+            selection_kinds.append((sel, b_kind))
+
+    return selection_kinds
+
+def get_selection_key(selection_mode, bandit_kind=None):
+    if bandit_kind is not None:
+        selection_mode = f"{selection_mode}.{bandit_kind}"
+    return selection_mode
+
+def generate_minimal_palette_map(source_dict, selection_kinds, sns_palette_name="cubehelix"):
+    """Extracts unique group strings and returns an active hexadecimal mapping."""
+    unique_groups = []
+    for sel_mode, b_kind in selection_kinds:
+        _, g_key = source_dict[get_selection_key(sel_mode, b_kind)]
+        if g_key not in unique_groups:
+            unique_groups.append(g_key)
+    if "fallback" not in unique_groups:
+        unique_groups.append("fallback")
+    
+    colors = sns.color_palette(sns_palette_name, len(unique_groups)).as_hex()
+    return dict(zip(unique_groups, colors))
 
 # =================================================================
 # METADATA RESOLUTION ENGINE
@@ -94,7 +132,9 @@ def resolve_test_metadata(test_mode):
         return TEST_GROUPS[test_mode]
     return f"{test_mode.replace('.', ' ').title()} (Unmapped)", "fallback"
 
-def resolve_selection_metadata(selection_mode):
+def resolve_selection_metadata(selection_mode, bandit_kind=None):
+    if bandit_kind is not None:
+        selection_mode = f"{selection_mode}.{bandit_kind}"
     if selection_mode in SELECTION_GROUPS:
         return SELECTION_GROUPS[selection_mode]
     return f"{selection_mode.replace('.', ' ').title()} (Unmapped)", "fallback"

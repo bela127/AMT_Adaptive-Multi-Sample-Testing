@@ -8,38 +8,24 @@ from amt.bandit_bounds import bandit_bounds
 from amt.configuration import Config
 import plot_utils
 
-if __name__ == "__main__":
-    sns.set_theme(style="whitegrid")
+# --- SIMULATION CONFIG PROPERTIES ---
+n, m = 20, 1
+max_iterations = 2000
+common_p, p_diff = 0.5, 0.1
+reps = 2500
 
-    # --- SIMULATION CONFIG PROPERTIES ---
-    n, m = 20, 1
-    max_iterations = 2000
-    common_p, p_diff = 0.5, 0.1
-    reps = 2500
-    
-    # 1. Establish the evaluation baseline test mode
-    target_test_mode = "chernoff.infinite"
-    
-    # 2. Extract active key arrays straight from the bandit_bounds repository
-    active_bandit_bounds = list(bandit_bounds.keys())
-    
-    # 3. Define the core selection primitives to evaluate
-    base_non_bandit_modes = ["rand", "ts", "beta.max", "beta.med"]
-    bandit_allocation_mechanisms = ["bandit.max", "bandit.ratio"]
-    
-    # 4. Programmatically combine the layers without manual pairing entries
-    evaluation_queue = []
-    
-    # Add non-bandit allocation baselines
-    for mode in base_non_bandit_modes:
-        evaluation_queue.append((mode, None))
-        
-    # Dynamically match every active bound function with your tracking allocators
-    for b_kind in active_bandit_bounds:
-        for alloc_mode in bandit_allocation_mechanisms:
-            evaluation_queue.append((alloc_mode, b_kind))
+# 1. Establish the evaluation baseline test mode
+target_test_modes = ["hoeffding.variance.infinite", "lil.variance", "glrt.horizon", "one.vs.rest.beta.mixture", "beta.mixture.infinite", "betting.e.variable", "bayesian.beta", "betabinom.pmf"]
 
-    makedirs(plot_utils.SAVE_PATH, exist_ok=True)
+# 2. Extract active key arrays straight from the bandit_bounds repository
+active_bandit_bounds = list(bandit_bounds.keys())
+
+# 3. Define the core selection primitives to evaluate
+base_non_bandit_modes = ["beta.med", "beta.max"]
+bandit_allocation_mechanisms = ["bandit.ratio"] # "bandit.max" , "bandit.ratio"
+    
+
+def plot_dynamic_selection_power_profiles(target_test_mode, evaluation_queue):
 
     fig, ax = plt.subplots(figsize=(12, 6), dpi=300)
     plotted_any = False  
@@ -59,6 +45,9 @@ if __name__ == "__main__":
         # Override the bound identifier context if evaluating a bandit block
         if b_kind is not None:
             dummy_conf.bandit_kind = b_kind
+            plot_utils.LOAD_PATH = "./test_res/bandit_sel"
+        else:
+            plot_utils.LOAD_PATH = "./test_res"
             
         file_path = f"{plot_utils.LOAD_PATH}/reject_{dummy_conf.get_test_name()}.npy"
         
@@ -72,14 +61,7 @@ if __name__ == "__main__":
         power = np.sum(test_decision, axis=0) / num_reps
         
         # Resolve labels and colors using selection-specific lookups
-        display_label, group_key = plot_utils.resolve_selection_metadata(sel_mode)
-        
-        # Append specific bound details to the display label if analyzing a bandit variant
-        if b_kind:
-            bound_label = b_kind.split('.')[0].title()  # e.g., 'Chernoff' or 'Kl'
-            display_label = f"{display_label} ({bound_label} Bound)"
-        else:
-            display_label = display_label
+        display_label, group_key = plot_utils.resolve_selection_metadata(sel_mode, b_kind)
             
         style = plot_utils.get_line_style(
             group_key=group_key, 
@@ -112,3 +94,16 @@ if __name__ == "__main__":
             bbox_inches='tight'
         )
         print("Dynamic selection plotting complete.")
+
+if __name__ == "__main__":
+    sns.set_theme(style="whitegrid")
+        
+    # 4. Programmatically combine the layers without manual pairing entries
+    evaluation_queue = plot_utils.merge_selection_kinds(base_non_bandit_modes, bandit_allocation_mechanisms, active_bandit_bounds)
+
+    plot_utils.SELECTION_PALETTE = plot_utils.generate_minimal_palette_map(plot_utils.SELECTION_GROUPS, evaluation_queue)
+
+    makedirs(plot_utils.SAVE_PATH, exist_ok=True)
+
+    for target_test_mode in target_test_modes:
+        plot_dynamic_selection_power_profiles(target_test_mode, evaluation_queue)

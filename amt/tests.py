@@ -46,7 +46,7 @@ class Test():
 
 
             "bayesian.beta":               bayesian_beta, #Not very powerful and computational expensive
-            "bayesian.beta.loo":           bayesian_beta_loo_test, # Unstable (alpha inflation) at low sample sizes, but powerful at high sample sizes
+            #"bayesian.beta.loo":           bayesian_beta_loo_test, # Unstable (alpha inflation) at low sample sizes, but powerful at high sample sizes
                                                                     #Increased Bonnferroni from 4 to num arms, noticeable improvement in stability, but still not perfect.
                                                                     #Loss in power -> better use bayesian_beta
 
@@ -629,10 +629,10 @@ def betabinom_pmf_test(contingency, conf: Config):
     fbb = betabinom(coin_sum, null_con1 + 1, null_con2 + 1)
     
     k_values = np.arange(np.max(coin_sum) + 1)[:, None]
-    all_pmfs = fbb.pmf(k_values)
+    all_pmfs = fbb.pmf(k_values) # pyright: ignore[reportAttributeAccessIssue]
     all_pmfs_masked = np.where(k_values <= coin_sum, all_pmfs, 0.0)
     
-    pmf_at_obs = fbb.pmf(contingency[0, :])
+    pmf_at_obs = fbb.pmf(contingency[0, :]) # pyright: ignore[reportAttributeAccessIssue]
     p_values = np.sum((all_pmfs_masked <= pmf_at_obs) * all_pmfs_masked, axis=0)
     
     return np.any(p_values < corr_alpha)
