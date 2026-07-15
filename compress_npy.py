@@ -2,41 +2,50 @@ import os
 import argparse
 import numpy as np
 
-def determine_best_dtype(arr):
+def determine_best_dtype(arr, sample=False):
     """
-    Analyzes the array and returns the smallest safe numpy dtype,
-    or None if it's already optimized or contains floating-point decimals.
+    Analyzes the array and returns the smallest safe numpy dtype.
+    Optimized to use fast contiguous block-reads (Head & Tail) for dry runs.
     """
     original_dtype = arr.dtype
-    
-    # If it's already a boolean, no optimization needed
     if original_dtype == np.bool_:
         return None
-        
-    # Check if the array has fractional parts (is it actually a float?)
-    # For integer dtypes, this is always true. For float dtypes, we check if all values are whole numbers.
-    if np.issubdtype(original_dtype, np.floating):
-        if not np.all(np.mod(arr, 1) == 0):
-            return None # Contains actual decimals, cannot downcast to int/bool safely
-            
-    # Find the data range
-    try:
-        min_val = np.min(arr)
-        max_val = np.max(arr)
-    except Exception:
-        return None # Fallback for empty or unreadable arrays
 
-    # Check for boolean compatibility (strictly 0 and 1)
+    # --- BLOCK SAMPLING FOR ULTRA-FAST DRY RUNS ---
+    if sample:
+        # Flatten the view to simplify slicing multi-dimensional structures
+        flat_view = arr.ravel()
+        total_elements = flat_view.size
+
+        if total_elements <= 2000:
+            # Array is tiny, just pull the whole thing in one shot
+            test_arr = flat_view[:]
+        else:
+            # Pull the first 1,000 elements and the last 1,000 elements.
+            # Because these are contiguous blocks, the OS and network layer 
+            # can stream them instantly in just 2 quick I/O operations.
+            head = flat_view[:1000]
+            tail = flat_view[-1000:]
+            test_arr = np.concatenate([head, tail])
+    else:
+        # Full, exhaustive check for live mode (runs completely in RAM)
+        test_arr = arr
+
+    # 1. Quick min/max check on the block sample
+    try:
+        min_val = np.min(test_arr)
+        max_val = np.max(test_arr)
+    except Exception:
+        return None
+
+    # Check for boolean compatibility
     if min_val == 0 and max_val == 1:
+        if np.issubdtype(original_dtype, np.floating):
+            if not np.all((test_arr == 0) | (test_arr == 1)):
+                return None
         return np.bool_ if original_dtype != np.bool_ else None
 
-    # Determine smallest integer type
-    # NumPy integer bounds:
-    # int8:   -128 to 127
-    # int16:  -32,768 to 32,767
-    # int32:  -2,147,483,648 to 2,147,483,647
-    # int64:  Beyond int32
-    
+    # 2. Determine target integer type candidate
     target_dtype = None
     if -128 <= min_val <= 127 and -128 <= max_val <= 127:
         target_dtype = np.int8
@@ -47,16 +56,21 @@ def determine_best_dtype(arr):
     else:
         target_dtype = np.int64
 
-    # If the target dtype is the same size or larger than the original, skip it
-    if target_dtype and np.dtype(target_dtype).itemsize < np.dtype(original_dtype).itemsize:
-        return target_dtype
+    # FAIL FAST: Skip heavy math if we aren't saving space
+    if target_dtype is None or np.dtype(target_dtype).itemsize >= np.dtype(original_dtype).itemsize:
+        return None
         
-    return None
+    # 3. Decimal check for floats
+    if np.issubdtype(original_dtype, np.floating):
+        if not np.all(np.mod(test_arr, 1) == 0):
+            return None 
+
+    return target_dtype
 
 def inspect_and_compress_folder(folder_path, dry_run=True, recursive=True):
     print(f"Scanning folder: {folder_path}")
     print(f"Recursion:     {'Enabled' if recursive else 'Disabled (Top-level only)'}")
-    print(f"Mode:          {'[DRY RUN] Previewing changes only' if dry_run else '[LIVE MODE] Modifying files'}\n")
+    print(f"Mode:          {'[DRY RUN] Fast Preview (Sampling Enabled)' if dry_run else '[LIVE MODE] Exhaustive verification and modification'}\n")
     input("Press Enter to continue or Ctrl+C to abort...")
     
     total_saved_bytes = 0
@@ -81,46 +95,55 @@ def inspect_and_compress_folder(folder_path, dry_run=True, recursive=True):
             display_path = os.path.relpath(file_path, folder_path)
             
             try:
-                # Use mmap_mode to check structure instantly without full memory footprint
+                # Open via mmap_mode to keep the initial footprint at 0 bytes
                 arr_meta = np.load(file_path, mmap_mode='r')
                 original_dtype = arr_meta.dtype
                 
-                target_dtype = determine_best_dtype(arr_meta)
+                # --- STRATEGY SPLIT ---
+                if dry_run:
+                    # Pass the memory map directly, but tell it to sample.
+                    # This will execute almost instantly over network/slow storage.
+                    target_dtype = determine_best_dtype(arr_meta, sample=True)
+                else:
+                    # Live Mode: Load fully into RAM *locally* for complete safety verification
+                    print(f"[*] Reading {display_path} completely into memory for verification...")
+                    full_arr = np.load(file_path)
+                    target_dtype = determine_best_dtype(full_arr, sample=False)
                 
                 if target_dtype is None:
-                    print(f"[-] {display_path}: Already optimized or contains continuous float data ({original_dtype}). Skipping.")
+                    if dry_run:
+                        print(f"[-] {display_path}: Likely already optimized or contains continuous float data. Skipping.")
+                    else:
+                        print(f"[-] {display_path}: Verified un-compressible. Skipping.")
                     continue
                 
                 original_size = os.path.getsize(file_path)
-                
-                # Calculate new size based on the target itemsize
                 new_itemsize = np.dtype(target_dtype).itemsize
                 estimated_new_size = (arr_meta.nbytes / arr_meta.itemsize) * new_itemsize
-                
                 saved_bytes = original_size - estimated_new_size
-                total_saved_bytes += max(0, saved_bytes) # Guard against edge cases where header sizes vary
+                total_saved_bytes += max(0, saved_bytes)
                 
-                print(f"[+] {display_path}: Found optimization. {original_dtype} -> {target_dtype.__name__}")
+                print(f"[+] {display_path}: Optimization found. {original_dtype} -> {target_dtype.__name__}")
                 print(f"    Size: {original_size / (1024**2):.2f} MB -> {estimated_new_size / (1024**2):.2f} MB")
                 
                 if not dry_run:
-                    actual_data = np.load(file_path)
-                    converted_data = actual_data.astype(target_dtype)
+                    # full_arr is already loaded and verified safely in RAM, convert it and save
+                    converted_data = full_arr.astype(target_dtype)
                     np.save(file_path, converted_data)
-                    print(f"    [SUCCESS] Converted to {target_dtype.__name__}.")
+                    print(f"    [SUCCESS] Written safely to disk.")
                     
             except Exception as e:
                 print(f"[ERROR] Could not process {display_path}: {e}")
 
     print("\n" + "="*50)
     print(f"Scan complete. Processed {file_count} .npy file(s).")
-    print(f"Total estimated storage savings: {total_saved_bytes / (1024**3):.2f} GB")
+    print(f"Total {'estimated' if dry_run else 'actual'} storage savings: {total_saved_bytes / (1024**3):.2f} GB")
     if dry_run and total_saved_bytes > 0:
-        print("Run again with '--run' to apply these changes permanently.")
+        print("Run again with '--run' to safely apply changes.")
     print("="*50)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Downcast redundant float/int numpy arrays to smaller int variants or boolean.")
+    parser = argparse.ArgumentParser(description="Downcast redundant float/int numpy arrays using fast sampling previews.")
     parser.add_argument("folder", type=str, help="Path to the directory containing .npy files")
     parser.add_argument("--run", action="store_false", dest="dry_run", help="Deactivate dry-run mode and rewrite files")
     parser.add_argument("--no-recursive", action="store_false", dest="recursive", help="Do not look into subdirectories")

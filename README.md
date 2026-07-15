@@ -37,6 +37,18 @@ install python version:
 pyenv install 3.13
 ```
 
+or if you have path issues:
+
+```bash
+env -u LD_LIBRARY_PATH pyenv install 3.13
+```
+
+set the projects local python to 3.13:
+
+```bash
+pyenv local 3.13.14
+```
+
 install poetry:
 
 ```bash
@@ -49,7 +61,8 @@ add it to bash, by adding the following to the bottom of the file  `~/.bashrc`:
 export PATH="/home/i40/boehnkeb/.local/bin:$PATH"
 ```
 
-set poetry to use pyenv:
+
+If you use old poetry (pre 2.0, check with "poetry --version") set poetry to use pyenv:
 
 ```bash
 poetry config virtualenvs.prefer-active-python true

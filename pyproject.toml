@@ -15,7 +15,7 @@ scipy = "^1.13.1"
 matplotlib = "^3.10.3"
 seaborn = "^0.13.2"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^6.2.5"
 mypy = "^0.910"
 black = "^21.6b0"
