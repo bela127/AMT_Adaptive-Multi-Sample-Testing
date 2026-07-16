@@ -8,8 +8,9 @@ class Selections():
 
     def __init__(self, conf: Config, samples = None) -> None:
         self.m = conf.m
-        self.n = conf.n
+        self.n: int = conf.n
         self.sample_size = conf.sample_size
+        self.alpha_c = conf.alpha_c
 
         selection_mode = conf.selection_mode
         sel_params = selection_mode.split(".")
@@ -190,8 +191,8 @@ class Selections():
 
         fr = beta(median_mean*aver_count+1, (1 - median_mean)*aver_count+1)
 
-        crit1 = fr.ppf(0.2)
-        crit2 = fr.ppf(0.8)
+        crit1 = fr.ppf(self.alpha_c/2)
+        crit2 = fr.ppf(1-self.alpha_c/2)
 
         p_low = beta.cdf(crit1, *(contingency+1))
         p_high = 1-beta.cdf(crit2, *(contingency+1))

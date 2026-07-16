@@ -19,24 +19,28 @@ class Config():
     dataset:str = ""
     hyp:int = 1
     bandit_kind:str = ""
+    alpha_c:float = 0.40
 
     def __post_init__(self):
         self._check_m_p_diff("p_diff")
         self._check_m_p_diff("m")
+        self._check_m_p_diff("hyp")
 
     def __setattr__(self, prop, val):
         super().__setattr__(prop, val)
         if prop == "p_diff" or prop == "m":
             self._check_m_p_diff(prop)
+            self._check_m_p_diff("hyp")
     
     def _check_m_p_diff(self, prop):
         if prop == "p_diff":
             if self.p_diff == 0 and self.m != 0:
                 self.m = 0
-                self.hyp = 0
         if prop == "m":
             if self.m == 0 and self.p_diff != 0:
                 self.p_diff = 0
+        if prop == "hyp":
+            if self.m == 0 or self.p_diff == 0:
                 self.hyp = 0
     
     def get_sel_name(self, version = 1):
@@ -95,6 +99,7 @@ class Config():
         #coin_weights="posdif"
         #dataset="",
         #significance=(0.05,0.025,0.01)
+        #alpha_c = 0.4
 
         try:
             self.bandit_kind = key_value["bandit"]
@@ -118,6 +123,7 @@ class Config():
             dataset=self.dataset,
             significance=self.significance,
             bandit_kind=self.bandit_kind,
+            alpha_c=self.alpha_c
         )
 
 

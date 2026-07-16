@@ -5,14 +5,16 @@ import numpy as np
 import seaborn as sns
 
 LOAD_PATH = "./test_res"
-SAVE_PATH = "./bandit_res"
+SAVE_PATH = "./plot_res"
 
 FIXED_BATCH_MODES = [
     "bayesian.beta", 
     "bayesian.beta.loo", 
     "betabinom.pmf", 
     "betabinom.extreme.pmf", 
-    "betabinom.isolated.extreme"
+    "betabinom.isolated.extreme",
+    "chi2",
+    "kw"
 ]
 
 # =================================================================
@@ -199,4 +201,5 @@ def load_and_process_results(file_path, test_mode):
             
         return test_decision, num_reps, num_iters
     except FileNotFoundError:
+        print(f"Failed loading {file_path}.")
         return None

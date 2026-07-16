@@ -1,8 +1,10 @@
 from typing import Optional
 
 from scipy.stats import beta
+from scipy.stats import chi2_contingency
 from scipy.special import betaln
 from scipy.stats import betabinom
+from scipy.stats import chi2
 import numpy as np
 
 from amt.configuration import Config
@@ -44,7 +46,7 @@ class Test():
             "ebp.mixture.infinite":        ebp_mixture_infinite_test,
             "betting.e.variable":          self.betting_evariable_test,
 
-
+            # --- NON ANYTIME ADAPTIVE TESTING ---
             "bayesian.beta":               bayesian_beta, #Not very powerful and computational expensive
             #"bayesian.beta.loo":           bayesian_beta_loo_test, # Unstable (alpha inflation) at low sample sizes, but powerful at high sample sizes
                                                                     #Increased Bonnferroni from 4 to num arms, noticeable improvement in stability, but still not perfect.
@@ -53,6 +55,12 @@ class Test():
             "betabinom.pmf":               betabinom_pmf_test,
             "betabinom.extreme.pmf":       betabinom_extreme_pmf_test,
             #"betabinom.isolated.extreme":  betabinom_isolated_extreme_test, # computational very expensive and equivalent to "betabinom.pmf".
+
+            # --- CLASIC TESTING ---
+
+            "chi2": chi2_test,
+            "kw": kw_test
+        
         }
 
         if conf is None:
@@ -208,7 +216,7 @@ def glrt_infinite_test(contingency, conf: Config):
     requirement by scaling the permissible divergence barrier dynamically with the 
     total accumulated observations across the entire system.
     """
-    beta_param = getattr(conf, 'alpha', 0.05)
+    beta_param = conf.significance[0]
     variance = 0.25
     num_arms = contingency.shape[1]
     
@@ -253,7 +261,7 @@ def glrt_horizon_test(contingency, conf: Config):
     profile likelihood ratio between the current empirical best arm and all competing 
     arms, calibrating the stop threshold against a log-horizon budget multiplier.
     """
-    beta_param = getattr(conf, 'alpha', 0.05)
+    beta_param = conf.significance[0]
     variance = 0.25  
     T = conf.sample_size * 2  # Fixed maximum horizon budget across the sequence
     num_arms = contingency.shape[1]
@@ -287,7 +295,7 @@ def glrt_horizon_test(contingency, conf: Config):
 
 ###### anytime alpha stopping and continuation #######
 
-def one_vs_rest_beta_mixture_test(contingency: np.ndarray, conf: Optional[Config] = None):
+def one_vs_rest_beta_mixture_test(contingency: np.ndarray, conf: Config):
     """
     Type of Bound: One-vs-Rest Beta-Binomial Likelihood Ratio E-Variable (Partitioned Likelihood Ratio).
     Data Nature:   Binary / Bernoulli [0, 1] (Exact Likelihood, Non-Asymptotic).
@@ -299,7 +307,7 @@ def one_vs_rest_beta_mixture_test(contingency: np.ndarray, conf: Optional[Config
     individual stream against the collective pooled data of all remaining streams, 
     aggregating the resulting spatial E-variables into a single global arithmetic mean.
     """
-    alpha_target = getattr(conf, 'alpha', 0.05) if conf is not None else 0.05
+    alpha_target = conf.significance[0]
     e_threshold = 1.0 / alpha_target
 
     # Uniform prior hyperparameters
@@ -360,7 +368,7 @@ def bayesian_e_variable(contingency, conf: Config):
     (1 parameter) against a fully decoupled alternative hypothesis where every individual 
     stream is modeled with its own independent parameter.
     """
-    alpha_target = getattr(conf, 'alpha', 0.05)
+    alpha_target = conf.significance[0]
     e_threshold = 1.0 / alpha_target
     
     # Matching uniform prior hyperparameters
@@ -395,7 +403,7 @@ def ebp_mixture_infinite_test(contingency, conf: Config):
     pairwise mean differences across an intrinsic scaling variance process, applying a spatial 
     union bound correction layer over all arm combinations.
     """
-    alpha_target = getattr(conf, 'alpha', 0.05)
+    alpha_target = conf.significance[0]
     sigma_squared = 0.25  
     
     # Rho represents the prior variance hyperparameter of the mixture.
@@ -453,7 +461,7 @@ def beta_mixture_infinite_test(contingency, conf):
     ratios for each distinct pair of streams and applies a spatial family-wise union bound 
     correction layer to the localized thresholds.
     """
-    alpha_target = getattr(conf, 'alpha', 0.05)
+    alpha_target = conf.significance[0]
     num_arms = contingency.shape[1]
     
     # Pairwise union bound correction layer
@@ -510,7 +518,7 @@ def bayesian_beta(contingency, conf: Config):
     Derived From:  Foundational Bayesian Inference / Probability Theory paired with 
                    the Bonferroni Inequality for Family-Wise Error Rate (FWER) control.
     """
-    beta_param = getattr(conf, 'alpha', 0.05)
+    beta_param = conf.significance[0]
     num_arms = contingency.shape[1]
     
     # Update posterior parameters directly from the contingency entries
@@ -547,7 +555,7 @@ def bayesian_beta_loo_test(contingency, conf):
         background's upper threshold, or if the laggard's upper boundary drops below the 
         background's lower threshold.
         """
-    beta_param = getattr(conf, 'alpha', 0.05)
+    beta_param = conf.significance[0]
     num_arms = contingency.shape[1]
     
     # Extract views to avoid repetitive 2D indexing overhead
@@ -615,7 +623,7 @@ def betabinom_pmf_test(contingency, conf: Config):
     Derived From:  Leave-One-Out Predictive Distribution under a Dirichlet-Multinomial/Beta-Binomial
                    conjugate framework. Pairwise combination via multi-sample reduction.
     """
-    alpha_target = getattr(conf, 'alpha', 0.05)
+    alpha_target = conf.significance[0]
     num_arms = contingency.shape[1]
     pulls_per_arm = np.sum(contingency, axis=0)
     if np.any(pulls_per_arm == 0): return False
@@ -644,7 +652,7 @@ def betabinom_extreme_pmf_test(contingency, conf: Config):
     Derived From:  Bidirectional Posterior Predictive Framework mapping leader 
                    and laggard mutually against each other's isolated intervals.
     """
-    alpha_target = getattr(conf, 'alpha', 0.05)
+    alpha_target = conf.significance[0]
     num_arms = contingency.shape[1]
     
     pulls_per_arm = contingency[0, :] + contingency[1, :]
@@ -710,7 +718,7 @@ def betabinom_isolated_extreme_test(contingency, conf: Config):
     Derived From:  Bayesian Predictive Quantile Intervals with Bonferroni Correction.
                    Direct discrete analog to the continuous bayesian_beta test.
     """
-    alpha_target = getattr(conf, 'alpha', 0.05)
+    alpha_target = conf.significance[0]
     num_arms = contingency.shape[1]
     
     pulls_per_arm = contingency[0, :] + contingency[1, :]
@@ -748,3 +756,66 @@ def betabinom_isolated_extreme_test(contingency, conf: Config):
     significant_low = observed_successes < lower_count_bounds
     
     return np.any(significant_high) or np.any(significant_low)
+
+
+def chi2_test(contingency, conf: Config):
+    alpha_target = conf.significance[0]
+
+    try:
+        res = chi2_contingency(contingency)
+        p_val = res[1]
+        return p_val < alpha_target
+    except ValueError:
+        print(f"missing data -> test can not be rejected")
+        return False
+
+
+def kw_test(contingency, conf: Config):
+    alpha_target = conf.significance[0]
+
+    try:
+        # 1. Row/Col summations
+        coin_sum = np.sum(contingency, axis=0)
+        low_high_sum = np.sum(contingency, axis=1)
+        total_sum = np.sum(contingency, axis=(0, 1))
+
+        # Check for zero totals or empty tables to avoid division by zero
+        if total_sum <= 1 or np.any(coin_sum == 0):
+            return False
+
+        # 2. Optimized ranks calculation
+        mid_low = (1 + low_high_sum[0]) / 2
+        mid_high = (low_high_sum[0] + 1 + total_sum) / 2
+
+        average_ranks = (mid_low * contingency[0, :] + mid_high * contingency[1, :]) / coin_sum
+
+        expected_average_rank = (total_sum + 1) / 2
+        expected_rank_variance = (total_sum**2 - 1) / 12
+
+        inner_metric = (average_ranks - expected_average_rank)**2 * coin_sum / expected_rank_variance
+
+        H = (total_sum - 1) / total_sum * np.sum(inner_metric)
+
+        # 3. Tie Correction
+        tie_correction = 1.0 - (low_high_sum[0]**3 - low_high_sum[0] + low_high_sum[1]**3 - low_high_sum[1]) / (total_sum**3 - total_sum)
+        
+        # Guard against zero-division if all values belong to a single tier
+        if tie_correction == 0:
+            return False
+            
+        h = H / tie_correction
+
+        # 4. Degree of Freedom & P-Value Calculation
+        # In Kruskal-Wallis, df = (number of groups) - 1. 
+        # Here, each coin/column represents a group.
+        num_groups = contingency.shape[1]
+        df = num_groups - 1
+
+        # Use the public chi2.sf (Survival Function) to get the right-tailed p-value
+        p_value = chi2.sf(h, df)
+
+        return p_value < alpha_target
+
+    except (ValueError, ZeroDivisionError):
+        # Gracefully handle situations where math fails due to empty/uninitialized data
+        return False
