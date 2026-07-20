@@ -14,12 +14,13 @@ class Config():
     p_diff:float = 0.05 #Difference in p for plated coins = 0.25 0.1 .05 .01 .005
     selection_mode:str = "ts" # selection mode = "adapt", "rand", "equal", "opt", "adapt.par", "adapt.slow"
     test_mode:str = "beta"
-    coin_weights:str = "posdif"
+    coin_weights:str = "simdif"
     significance:tuple = (0.05,0.025,0.01)
     dataset:str = ""
     hyp:int = 1
     bandit_kind:str = ""
     alpha_c:float = 0.40
+    prior:tuple = (1,1)
 
     def __post_init__(self):
         self._check_m_p_diff("p_diff")
@@ -126,15 +127,3 @@ class Config():
             alpha_c=self.alpha_c
         )
 
-
-def calc_coin_weights_posdif(conf: Config):
-    same_ps = np.ones(shape=(conf.n,))*conf.common_p
-    all_diff_ps = np.ones(shape=(conf.n,))*conf.common_p+conf.p_diff
-    m_diff_ps = np.concatenate((same_ps[:conf.n-conf.m], all_diff_ps[:conf.m]))
-
-    ps = m_diff_ps
-    return ps
-
-coin_weights = {
-        "posdif": calc_coin_weights_posdif,
-    }

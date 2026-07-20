@@ -6,11 +6,11 @@ test = Test()
 
 if __name__ == "__main__":
     for n in [20]: # [5, 10, 15, 20]
-        for sel_mode in ["equal", "beta.med"]:# "equal", "beta.med"
-            for test_mode in ["betabinom.pmf", "chi2", "kw"]: # "betabinom.pmf", "chi2", "kw"
+        for sel_mode in ["beta.med"]:# "equal", "beta.med"
+            for test_mode in ["betabinom.pmf"]: # "betabinom.pmf", "chi2", "kw"
                 for m in [1]: # 0, 1, 2, int(n/2)
                     for hyp in [1]:
-                        for p_diff in [0.0, 0.05, 0.075, 0.1, 0.125, 0.15, 0.2]:
+                        for p_diff in [0.2]:
                             conf = Config(
                                 n = n,
                                 m = m,

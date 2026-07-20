@@ -11,6 +11,7 @@ class Selections():
         self.n: int = conf.n
         self.sample_size = conf.sample_size
         self.alpha_c = conf.alpha_c
+        self.prior = conf.prior
 
         selection_mode = conf.selection_mode
         sel_params = selection_mode.split(".")
@@ -189,13 +190,13 @@ class Selections():
 
         median_mean = np.median(coin_mean, axis=0)
 
-        fr = beta(median_mean*aver_count+1, (1 - median_mean)*aver_count+1)
+        fr = beta(median_mean*aver_count+self.prior[0], (1 - median_mean)*aver_count+self.prior[1])
 
         crit1 = fr.ppf(self.alpha_c/2)
         crit2 = fr.ppf(1-self.alpha_c/2)
 
-        p_low = beta.cdf(crit1, *(contingency+1))
-        p_high = 1-beta.cdf(crit2, *(contingency+1))
+        p_low = beta.cdf(crit1, *(contingency+np.asarray([self.prior[0],self.prior[1]])[:,None]))
+        p_high = 1-beta.cdf(crit2, *(contingency+np.asarray([self.prior[0],self.prior[1]])[:,None]))
 
         coin1 = np.argmax(p_low)
         coin2 = np.argmax(p_high)

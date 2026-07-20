@@ -45,9 +45,9 @@ def plot_dynamic_selection_power_profiles(target_test_mode, evaluation_queue):
         # Override the bound identifier context if evaluating a bandit block
         if b_kind is not None:
             dummy_conf.bandit_kind = b_kind
-            plot_utils.LOAD_PATH = "./test_res/bandit_sel"
+            plot_utils.LOAD_PATH = "./exp_results/test_res/bandit_sel"
         else:
-            plot_utils.LOAD_PATH = "./test_res"
+            plot_utils.LOAD_PATH = "./exp_results/test_res/our_selection"
             
         file_path = f"{plot_utils.LOAD_PATH}/reject_{dummy_conf.get_test_name()}.npy"
         

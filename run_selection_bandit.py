@@ -21,6 +21,6 @@ if __name__ == "__main__":
                             )
 
 
-                            exp = Experiment(conf=conf)
+                            exp = Experiment(conf=conf, save_path = f"./exp_results/coin_res/bandit_sel")
                             exp.run_parallel()
                             exp.save()

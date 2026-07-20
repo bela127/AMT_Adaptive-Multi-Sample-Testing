@@ -18,12 +18,11 @@ if __name__ == "__main__":
                     m = 1,
                     sample_size = 2000,
                     initial_size = 10,
-                    reps = 10000,
+                    reps = 5000,
                     common_p = 0.5,
                     p_diff = 0.05,
                     selection_mode = sel_mode,
                     test_mode = test_mode,
-                    coin_weights = "posdif",
                 )
                 confs.append(conf)
 
@@ -36,4 +35,4 @@ if __name__ == "__main__":
                 return f"sel.mode-{conf.selection_mode}_test.mode-{conf.test_mode}_sig-{sig}"
             
             colors = ['#163d4e', '#54792f', '#d07e93', '#c1caf3']
-            plot_power(confs, title_func=title, label_func=label, save_func=save, load_path="./test_res/H1", save_path = "./power_plots/coins", line_colors=colors)
+            plot_power(confs, title_func=title, label_func=label, save_func=save, load_path="./exp_results/test_res/H1", save_path = "./power_plots/vari_n", line_colors=colors)

@@ -188,13 +188,13 @@ def apply_scatter_legend(ax, bbox_to_anchor=(0.5, -0.15)):
         scatterpoints=1     # Ensures 1 point per marker item
     )
 
-def load_and_process_results(file_path, test_mode):
+def load_and_process_results(file_path, test_mode, annytime = True):
     try:
         raw_data = np.load(file_path)
         tests = np.squeeze(raw_data, axis=0) 
         num_reps, num_iters = tests.shape
         
-        if test_mode in FIXED_BATCH_MODES:
+        if test_mode in FIXED_BATCH_MODES or annytime == False:
             test_decision = tests.astype(bool)
         else:
             test_decision = np.maximum.accumulate(tests, axis=1).astype(bool)

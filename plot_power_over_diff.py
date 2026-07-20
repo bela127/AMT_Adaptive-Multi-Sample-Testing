@@ -8,6 +8,8 @@ import plot_utils
 
 if __name__ == "__main__":
     sns.set_theme(style="whitegrid")
+
+    plot_utils.LOAD_PATH = "./exp_results/test_res/p_and_p_diff"
     
     test_suite = Test()
     test_modes = list(test_suite.test_modes.keys())

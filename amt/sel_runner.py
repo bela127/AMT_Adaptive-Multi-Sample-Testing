@@ -4,8 +4,9 @@ from os import makedirs
 import numpy as np
 
 
-from amt.configuration import Config, coin_weights
+from amt.configuration import Config
 from amt.selection import Selections
+from amt.coin_weights import coin_weights
 
 
 

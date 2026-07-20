@@ -61,9 +61,9 @@ def build_and_plot_merged_end_power(evaluation_queue):
             # Override the bound identifier context if evaluating a bandit block
             if b_kind is not None:
                 dummy_conf.bandit_kind = b_kind
-                plot_utils.LOAD_PATH = "./test_res/bandit_sel"
+                plot_utils.LOAD_PATH = "./exp_results/test_res/bandit_sel"
             else:
-                plot_utils.LOAD_PATH = "./test_res"
+                plot_utils.LOAD_PATH = "./exp_results/test_res/non_bandit_selection"
                 
             file_path = f"{plot_utils.LOAD_PATH}/reject_{dummy_conf.get_test_name()}.npy"
             

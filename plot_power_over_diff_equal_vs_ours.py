@@ -7,6 +7,8 @@ import plot_utils
 
 if __name__ == "__main__":
     sns.set_theme(style="whitegrid")
+
+    plot_utils.LOAD_PATH = "./exp_results/test_res/vari_p_diff"
     
     # 1. Define configuration settings matching your ablation run
     n = 20
@@ -53,7 +55,7 @@ if __name__ == "__main__":
             )
             
             # Use the designated output folder where your test results were saved
-            file_path = f"./exp_results/test_res/reject_{dummy_conf.get_test_name()}.npy"
+            file_path = f"{plot_utils.LOAD_PATH}/reject_{dummy_conf.get_test_name()}.npy"
             
             processed = plot_utils.load_and_process_results(file_path, test_mode)
             if processed is not None:
