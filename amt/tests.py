@@ -36,25 +36,25 @@ class Test():
             "kl.infinite":                 get_bandit_test("kl.infinite"), # Computational expensive, but well founded
 
             # --- ASYMPTOTIC LIKELIHOOD RATIO ---
-            #  "glrt.horizon":                glrt_horizon_test,
-            #  "glrt.infinite":               glrt_infinite_test,
+               "glrt.horizon":                glrt_horizon_test,
+               "glrt.infinite":               glrt_infinite_test,
             
             # --- E-VARIABLES & SAFE TESTING ---
             "bayesian.e.variable":         bayesian_e_variable, #Not very powerful, but a good baseline
-            #  "one.vs.rest.beta.mixture":    one_vs_rest_beta_mixture_test,
-            #  "beta.mixture.infinite":       beta_mixture_infinite_test,
-            #  "ebp.mixture.infinite":        ebp_mixture_infinite_test,
+              "one.vs.rest.beta.mixture":    one_vs_rest_beta_mixture_test, # Our new e-var approach
+              "beta.mixture.infinite":       beta_mixture_infinite_test,
+              "ebp.mixture.infinite":        ebp_mixture_infinite_test,
             "betting.e.variable":          self.betting_evariable_test,
 
             # --- NON ANYTIME ADAPTIVE TESTING ---
-            #  "bayesian.beta":               bayesian_beta, #Not very powerful and computational expensive
-            #"bayesian.beta.loo":           bayesian_beta_loo_test, # Unstable (alpha inflation) at low sample sizes, but powerful at high sample sizes
+               "bayesian.beta":               bayesian_beta, #Not very powerful and computational expensive
+                   "bayesian.beta.loo":           bayesian_beta_loo_test, # Unstable (alpha inflation) at low sample sizes, but powerful at high sample sizes
                                                                     #Increased Bonnferroni from 4 to num arms, noticeable improvement in stability, but still not perfect.
                                                                     #Loss in power -> better use bayesian_beta
 
             "betabinom.pmf":               betabinom_pmf_test,
-            #  "betabinom.extreme.pmf":       betabinom_extreme_pmf_test,
-            #"betabinom.isolated.extreme":  betabinom_isolated_extreme_test, # computational very expensive and equivalent to "betabinom.pmf".
+               "betabinom.extreme.pmf":       betabinom_extreme_pmf_test,
+                    "betabinom.isolated.extreme":  betabinom_isolated_extreme_test, # computational very expensive and equivalent to "betabinom.pmf".
 
             # --- CLASIC TESTING ---
 

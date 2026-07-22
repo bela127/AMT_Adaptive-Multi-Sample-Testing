@@ -12,8 +12,9 @@ if __name__ == "__main__":
     
     # 1. Define configuration settings matching your ablation run
     n = 20
+    m = 1
     max_iterations = 2000
-    default_common_p = 0.5
+    common_p = 0.5
     reps = 2500
     
     p_diff_values = [0.0, 0.05, 0.075, 0.1, 0.125, 0.15, 0.2]
@@ -23,13 +24,18 @@ if __name__ == "__main__":
     target_configs = [
         ("beta.med", "betabinom.pmf"),
         ("equal", "betabinom.pmf"),
+        #("beta.med", "lil.variance"),
+        #("beta.med", "hoeffding.variance.infinite"),
         ("equal", "chi2"),
-        ("equal", "kw")
+        #("beta.med", "bernstein.empiric.infinite"),
+        #("beta.med", "kl.horizon"),
+        ("equal", "kw"),
+        #("beta.med", "betting.e.variable"),
     ]
     
     makedirs(plot_utils.SAVE_PATH, exist_ok=True)
 
-    fig, ax = plt.subplots(figsize=(12, 6), dpi=300)
+    fig, ax = plt.subplots(figsize=(11, 5), dpi=300)
     plotted_any = False  
     group_counters = {g_key: 0 for g_key in plot_utils.TEST_PALETTE.keys()}
     line_index = 0
@@ -42,12 +48,12 @@ if __name__ == "__main__":
             
             dummy_conf = Config(
                 n=n, 
-                m=1, 
+                m=m, 
                 hyp=1,
                 sample_size=max_iterations, 
                 initial_size=10, 
                 reps=reps,
-                common_p=default_common_p, 
+                common_p=common_p, 
                 p_diff=val, 
                 selection_mode=sel_mode, 
                 test_mode=test_mode,
@@ -72,31 +78,35 @@ if __name__ == "__main__":
                 group_counter=group_counters[group_key], 
                 line_index=line_index, 
                 color_lookup_table=plot_utils.TEST_PALETTE,
-                marker_stride=1
+                marker_stride=1,
+                group_offset = True
             )
             group_counters[group_key] += 1 
             line_index += 1
             
+            display_sel_label, group_key = plot_utils.resolve_selection_metadata(sel_mode)
             # Format display label to show both selection policy and test type
-            combined_label = f"{display_test_label} ({sel_mode})"
+            combined_label = f"{display_test_label} + {display_sel_label}"
             
             ax.plot(x_points, y_power_points, label=combined_label, markersize=6, **style)
             plotted_any = True
 
     if plotted_any:
         ax.set_title(
-            f"Ablation Study: Terminal Power Across Effect Sizes\n"
-            f"($N={n}$, $p_{{common}}={default_common_p}$ at $t={max_iterations}$)", 
+            f"End Power across Effect Sizes for Clasic Tests\n"
+            f"($K={n}, M={m}, p = {common_p}$ at $T={max_iterations}$)", 
             fontsize=13, fontweight='bold', pad=15
         )
-        ax.set_xlabel(r"Effect Size Variation ($\Delta p$)", fontsize=11, labelpad=8)
-        ax.set_ylabel("Statistical Power ($1 - \\beta$)", fontsize=11, labelpad=8)
+        ax.set_xlabel(r"Effect Size ($\Delta p$)", fontsize=11, labelpad=8)
+        ax.set_ylabel("End Power ($1 - \\beta$)", fontsize=11, labelpad=8)
         ax.set_ylim(-0.02, 1.02)
         ax.set_xticks(p_diff_values) 
         
-        plot_utils.apply_standard_legend(ax)
+        plot_utils.apply_standard_legend(ax, ncol=3)
         
-        save_filename = f"ablation_power_by_p_diff_n{n}_mixed_selection.png"
-        plt.savefig(f"{plot_utils.SAVE_PATH}/{save_filename}", bbox_inches='tight')
+        save_filename = f"power_over_p_diff_for_classic"
+
+        plot_utils.save_fig(fig, save_filename, plot_utils.SAVE_PATH, "svg")
+        plot_utils.save_fig(fig, save_filename, plot_utils.SAVE_PATH, "png")
         plt.close()
         print(f"Power plot successfully generated and saved as: {save_filename}")

@@ -17,7 +17,7 @@ if __name__ == "__main__":
     sns.set_theme(style="whitegrid")
     makedirs(plot_utils.SAVE_PATH, exist_ok=True)
     
-    fig, ax = plt.subplots(figsize=(12, 6), dpi=300)
+    fig, ax = plt.subplots(figsize=(11, 5), dpi=300)
     plotted_any = False
     
     # Extrahiere alle aktiven Banditen-Typen aus dem Repository
@@ -29,7 +29,9 @@ if __name__ == "__main__":
         # 1. Unser Ansatz
         ("beta.med", "betabinom.pmf", None, "./exp_results/test_res/non_bandit_selection"),
         # 2. Alternativ-Ansatz
-        ("evar", "one.vs.rest.beta.mixture", None, "./exp_results/test_res/non_bandit_selection")
+        #("evar", "one.vs.rest.beta.mixture", None, "./exp_results/test_res/non_bandit_selection")
+        ("beta.med", "bayesian.e.variable", None, "./exp_results/test_res/non_bandit_selection"),
+        ("beta.med", "betting.e.variable", None, "./exp_results/test_res/non_bandit_selection"),
     ]
     
     # 3. Dynamisch die passenden Bandit-Paare hinzufügen
@@ -43,18 +45,14 @@ if __name__ == "__main__":
 
     # Erzeuge die adaptive Palette basierend auf allen vorkommenden Kombinationen
     evaluation_queue = [(sel, b) for sel, _, b, _ in targeted_combinations]
-    plot_utils.SELECTION_PALETTE = plot_utils.generate_minimal_palette_map(
-        plot_utils.SELECTION_GROUPS, 
-        evaluation_queue
-    )
 
     # Initialisiere Styling-Zähler analog zu deiner originalen Render-Schleife
-    group_counters = {g_key: 0 for g_key in plot_utils.SELECTION_PALETTE.keys()}
+    group_counters = {g_key: 0 for g_key in plot_utils.TEST_PALETTE.keys()}
     line_index = 0
     
     for sel_mode, test_mode, b_kind, load_dir in targeted_combinations:
         # Automatische Auflösung des Display-Labels und des Gruppen-Schlüssels
-        display_label, group_key = plot_utils.resolve_selection_metadata(sel_mode, b_kind)
+        display_label, group_key = plot_utils.resolve_test_metadata(test_mode)
         
         dummy_conf = Config(
             n=n, m=m, sample_size=max_iterations, initial_size=10, reps=reps,
@@ -80,7 +78,7 @@ if __name__ == "__main__":
             group_key=group_key, 
             group_counter=group_counters.get(group_key, 0), 
             line_index=line_index, 
-            color_lookup_table=plot_utils.SELECTION_PALETTE,
+            color_lookup_table=plot_utils.TEST_PALETTE,
             marker_stride=250  
         )
         
@@ -100,19 +98,20 @@ if __name__ == "__main__":
 
     if plotted_any:
         ax.set_title(
-            f"Power Comparison: Matching Bandit Configurations vs. Adaptive Approaches\n"
-            f"($N={n}$, $M={m}$, $\\Delta p={p_diff}$, $t_{{max}}={max_iterations}$)", 
+            f"Power of Bandits with Matching Bandit Selection vs. Adaptive Approaches with Selection {plot_utils.resolve_selection_metadata("beta.med")[0]}\n"
+            f"($K={n}$, $M={m}$, $p={common_p}$, $\\Delta p={p_diff}$, $T={max_iterations}$)", 
             fontsize=13, fontweight='bold', pad=15
         )
-        ax.set_xlabel("Sequential Sample Observations ($t$)", fontsize=11, labelpad=8)
-        ax.set_ylabel("Statistical Power ($1 - \\beta$)", fontsize=11, labelpad=8)
+        ax.set_xlabel("Sample Time ($t$)", fontsize=11, labelpad=8)
+        ax.set_ylabel("Power ($1 - \\beta$)", fontsize=11, labelpad=8)
         
         ax.set_ylim(-0.02, 1.02)
         ax.set_xlim(0, max_iterations)
         
         plot_utils.apply_standard_legend(ax)
         
-        save_name = f"matching_bandit_vs_adaptive_power_n{n}.png"
-        plt.savefig(f"{plot_utils.SAVE_PATH}/{save_name}", bbox_inches='tight')
+        save_name = f"power_full_bandit_vs_ours_n{n}"
+        plot_utils.save_fig(fig, save_name, plot_utils.SAVE_PATH, "svg")
+        plot_utils.save_fig(fig, save_name, plot_utils.SAVE_PATH, "png")
         plt.close()
-        print(f"Zentraler Vergleichsplot erfolgreich gespeichert unter: {save_name}")
+        print(f"Erfolgreich gespeichert unter: {save_name}")

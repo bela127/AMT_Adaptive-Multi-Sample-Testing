@@ -2,7 +2,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sns
 from os import makedirs
-from amt.tests import Test
 from amt.configuration import Config
 import plot_utils
 
@@ -11,8 +10,7 @@ if __name__ == "__main__":
 
     plot_utils.LOAD_PATH = "./exp_results/test_res/p_and_p_diff"
     
-    test_suite = Test()
-    test_modes = list(test_suite.test_modes.keys())
+    test_modes = list(plot_utils.TEST_GROUPS.keys())
 
     n = 20
     sel_mode = "beta.med"
@@ -24,7 +22,7 @@ if __name__ == "__main__":
     
     makedirs(plot_utils.SAVE_PATH, exist_ok=True)
 
-    fig, ax = plt.subplots(figsize=(12, 6), dpi=300)
+    fig, ax = plt.subplots(figsize=(11, 5), dpi=300)
     plotted_any = False  
     group_counters = {g_key: 0 for g_key in plot_utils.TEST_PALETTE.keys()}
     line_index = 0
@@ -60,10 +58,15 @@ if __name__ == "__main__":
             plotted_any = True
 
     if plotted_any:
-        ax.set_title(f"Final Empirical Power ($N={n}$, Selection: `{sel_mode}`, $\\Delta p={default_p_diff}$ at $t={max_iterations}$)", fontsize=14, fontweight='bold', pad=15)
-        ax.set_xlabel(r"Base Probability ($p_{{common}}$)", fontsize=11, labelpad=8)
-        ax.set_ylabel("Statistical Power ($1 - \\beta$)", fontsize=11, labelpad=8)
+        ax.set_title(f"End Power across Base Probability for Bandits with Selection {plot_utils.resolve_selection_metadata("beta.med")[0]}\n"
+                    f"($K={n}, M={m}$, $\\Delta p={default_p_diff}$ at $T={max_iterations}$)"
+                    , fontsize=14, fontweight='bold', pad=15)
+        ax.set_xlabel(r"Base Probability ($p$)", fontsize=11, labelpad=8)
+        ax.set_ylabel("End Power ($1 - \\beta$)", fontsize=11, labelpad=8)
         ax.set_ylim(-0.02, 1.02)
         ax.set_xticks(common_p_values) 
         plot_utils.apply_standard_legend(ax)
-        plt.savefig(f"{plot_utils.SAVE_PATH}/final_power_by_common_p_n{n}_{sel_mode}.png", bbox_inches='tight')
+        plot_name = "power_over_p_for_bandits"
+        plot_utils.save_fig(fig, plot_name, plot_utils.SAVE_PATH, "svg")
+        plot_utils.save_fig(fig, plot_name, plot_utils.SAVE_PATH, "png")
+        print(f"Saved as: {plot_name}")

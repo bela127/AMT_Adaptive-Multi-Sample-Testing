@@ -1,8 +1,20 @@
 # plot_utils.py
 from os import makedirs
+import os
 import sys
 import numpy as np
 import seaborn as sns
+
+import matplotlib as mpl
+from matplotlib.legend_handler import HandlerPathCollection
+
+mpl.rcParams['text.usetex'] = True
+# Replace default preamble to omit type1cm
+mpl.rcParams['text.latex.preamble'] = r'''
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+'''
 
 LOAD_PATH = "./test_res"
 SAVE_PATH = "./plot_res"
@@ -22,8 +34,18 @@ FIXED_BATCH_MODES = [
 # =================================================================
 
 TEST_GROUPS = {
+    "betabinom.pmf":               (r"\textbf{Beta-Binom LOO (Ours)}",     "betabinom_counts"),
+#    "betabinom.extreme.pmf":       ("Beta-Binom Extreme LOO",    "betabinom_counts"),
+#    "betabinom.isolated.extreme":  ("Beta-Binom Isolated Pair",  "betabinom_counts"),
+#    "bayesian.beta":               ("Bayesian Beta Interval",    "bayesian_beta"),
+#    "bayesian.beta.loo":           ("Bayesian Beta LOO",         "bayesian_beta"),
     "chernoff.horizon":            ("Chernoff (Horizon)",        "chernoff"),
     "chernoff.infinite":           ("Chernoff (Infinite)",       "chernoff"),
+    "bayesian.e.variable":         ("Beta-Bayesian Factor E-Var", "e_vars"),
+#    "one.vs.rest.beta.mixture":    ("One-vs-Rest Beta Mixture E-Var", "e_vars"),
+#    "beta.mixture.infinite":       ("EBP Beta Mixture E-Var",    "e_vars"),
+#    "ebp.mixture.infinite":        ("EBP Normal Mixture E-Var",  "e_vars"),
+    "betting.e.variable":          ("Betting E-Var",             "e_vars"),
     "hoeffding.variance.horizon":  ("Hoeffding (Var, Horizon)",  "hoeffding"),
     "hoeffding.empiric.horizon":   ("Hoeffding (Emp, Horizon)",  "hoeffding"),
     "hoeffding.variance.infinite": ("Hoeffding (Var, Infinite)", "hoeffding"),
@@ -36,32 +58,28 @@ TEST_GROUPS = {
     "lil.empiric":                 ("LIL (Empirical)",           "lil"),
     "kl.horizon":                  ("KL-UCB (Horizon)",          "kl"),
     "kl.infinite":                 ("KL-UCB (Infinite)",         "kl"),
-    "glrt.horizon":                ("GLRT (Horizon)",            "glrt"),
-    "glrt.infinite":               ("GLRT (Infinite)",           "glrt"),
-    "bayesian.e.variable":         ("Beta-Bayesian Factor E-Var", "e_vars"),
-    "one.vs.rest.beta.mixture":    ("One-vs-Rest Beta Mixture E-Var", "e_vars"),
-    "beta.mixture.infinite":       ("EBP Beta Mixture E-Var",    "e_vars"),
-    "ebp.mixture.infinite":        ("EBP Normal Mixture E-Var",  "e_vars"),
-    "betting.e.variable":          ("Betting E-Var",             "e_vars"),
-    "bayesian.beta":               ("Bayesian Beta Interval",    "bayesian_beta"),
-    "bayesian.beta.loo":           ("Bayesian Beta LOO",         "bayesian_beta"),
-    "betabinom.pmf":               ("Beta-Binom Global LOO",     "betabinom_counts"),
-    "betabinom.extreme.pmf":       ("Beta-Binom Extreme LOO",    "betabinom_counts"),
-    "betabinom.isolated.extreme":  ("Beta-Binom Isolated Pair",  "betabinom_counts")
+#    "glrt.horizon":                ("GLRT (Horizon)",            "glrt"),
+#    "glrt.infinite":               ("GLRT (Infinite)",           "glrt"),
+    "chi2":               (r"$\chi^2$ Test",           "baseline"),
+    "kw":               ("Kruskal-Wallis",           "baseline"),
 }
 
 SELECTION_GROUPS = {
-    "rand":          ("Uniform Random",             "baseline"),
-    "ts":            ("Thompson Sampling",          "bayesian_beta"),
-    "beta.max":      ("Beta Extreme Value",   "bayesian_beta"),
-    "beta.med":      ("Beta Spatial Center (Med)",  "bayesian_beta"),
-    "evar":          ("LOO E-Var",  "e_vars"),
+#    "beta.max":      ("Beta Extreme",   "bayesian_beta"),
+    "beta.med":      (r"\textbf{Beta Med (Ours)}",  "bayesian_beta"),
+#    "evar":          ("LOO E-Var",  "e_vars"),
+#    "rand":          ("Uniform Random",             "baseline"),
+    "equal":         ("Space Filling",              "baseline"),
+    "ts":            ("Thompson Sampling (TS)",          "ts"),
+    "ts.5":          ("TS High Exploitation",          "ts"),
+    "means":          ("Mean Diff. Gready",          "baseline"),
+    "mean.slow":     ("Mean Diff. Vanishing Eps.",          "baseline"),
 }
 
 for b_kind, (label, group_key) in  TEST_GROUPS.items():
     selection_modes = {
-        "bandit.max":    "Extreme Value",
-        "bandit.ratio":  "Interval Ratio"
+        "bandit.max":    "Sel.",
+        "bandit.ratio":  "Ratio"
     }
     for sel_mode, sel_label in selection_modes.items():
         SELECTION_GROUPS[f"{sel_mode}.{b_kind}"] = (f"{sel_label} {label}", group_key)
@@ -100,7 +118,7 @@ def merge_selection_kinds(non_bandit_sel, bandit_sel, bandit_bounds):
     for sel in non_bandit_sel:
         selection_kinds.append((sel, None))
         
-    # Dynamically match every active bound function with your tracking allocators
+    # Dynamically match every active bound function with tracking allocators
     for b_kind in bandit_bounds:
         for sel in bandit_sel:
             selection_kinds.append((sel, b_kind))
@@ -145,8 +163,14 @@ def resolve_selection_metadata(selection_mode, bandit_kind=None):
 # GENERALIZED LINE STYLE GENERATOR
 # =================================================================
 
-def get_line_style(group_key, group_counter, line_index, color_lookup_table, marker_stride=250):
-    current_style_idx = group_counter % len(STYLE_CYCLE)
+def get_line_style(group_key, group_counter, line_index, color_lookup_table, marker_stride=250, group_offset = False):
+    offset = 0
+    if group_offset:
+        for key in color_lookup_table:
+            if key == group_key:
+                break
+            offset +=1
+    current_style_idx = (offset + group_counter) % len(STYLE_CYCLE) 
     style_config = STYLE_CYCLE[current_style_idx].copy()
     
     marker_start_offset = (line_index * 40) % marker_stride
@@ -158,34 +182,54 @@ def get_line_style(group_key, group_counter, line_index, color_lookup_table, mar
 # STANDARD PLOTTING OVERLAYS & IO
 # =================================================================
 
-def apply_standard_legend(ax, bbox_to_anchor=(0.5, -0.15)):
+def apply_standard_legend(ax, bbox_to_anchor=(0.5, -0.13), ncol = 4):
     ax.legend(
         loc="upper center",
         bbox_to_anchor=bbox_to_anchor,
-        ncol=4,
+        ncol=ncol,
         fontsize=9,
         frameon=True,
         facecolor='#fafafa',
         edgecolor='#e3e3e3',
-        columnspacing=1.8,
+        columnspacing=1.0,
         handletextpad=0.8,
         handlelength=3.0,   
         numpoints=1         
     )
 
-def apply_scatter_legend(ax, bbox_to_anchor=(0.5, -0.15)):
+from matplotlib.legend_handler import HandlerTuple
+import matplotlib.lines as mlines
+
+def apply_scatter_legend(ax, bbox_to_anchor=(0.5, -0.15), title=None, left_pad_pts=1):
+    """
+    Erstellt eine Legende mit explizitem Abstand VOR dem Marker-Symbol.
+    """
+    # 1. Bestehende Handles und Labels von den Axes abgreifen
+    handles, labels = ax.get_legend_handles_labels()
+    
+    # 2. Erstelle für jeden Marker ein leeres Spacer-Element
+    #    (Ein unsichtbarer Punkt mit fester Breite als Vorlauf)
+    spacer = mlines.Line2D([], [], color='none', marker='', markersize=0)
+    
+    # 3. Verknüpfe den Spacer vor jeden echten Handle
+    padded_handles = [(spacer, h) for h in handles]
+    
     ax.legend(
-        loc="upper center",
+        handles=padded_handles,
+        labels=labels,
+        title=title,
+        alignment='left',
+        loc="lower left",
         bbox_to_anchor=bbox_to_anchor,
-        ncol=4,
+        ncol=1,
         fontsize=9,
         frameon=True,
         facecolor='#fafafa',
         edgecolor='#e3e3e3',
         columnspacing=1.8,
-        handletextpad=1.5,  # Tightened since line handles are removed
-        handlelength=0,     # Completely hides the line component
-        scatterpoints=1     # Ensures 1 point per marker item
+        handletextpad=0.4,
+        handlelength=left_pad_pts,
+        scatterpoints=1,
     )
 
 def load_and_process_results(file_path, test_mode, annytime = True):
@@ -203,3 +247,8 @@ def load_and_process_results(file_path, test_mode, annytime = True):
     except FileNotFoundError:
         print(f"Failed loading {file_path}.")
         return None
+
+
+def save_fig(fig, name, path, format="svg"):
+    loc = os.path.join(path,f"{name}.{format}")
+    fig.savefig(loc, format=format, bbox_inches='tight', transparent="True", pad_inches=0)

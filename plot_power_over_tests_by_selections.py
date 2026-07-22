@@ -8,6 +8,7 @@ from amt.bandit_bounds import bandit_bounds
 from amt.configuration import Config
 import plot_utils
 from plot_utils import TEST_GROUPS, apply_scatter_legend
+import matplotlib.transforms as mtransforms
 
 # --- SIMULATION CONFIG PROPERTIES ---
 n, m = 20, 1
@@ -17,13 +18,15 @@ reps = 2500
 
 # 1. Establish the evaluation baseline test mode
 target_test_modes = [
+    "bayesian.e.variable",
+    "kl.horizon",
     "hoeffding.variance.infinite",
     "betting.e.variable",
-    "beta.mixture.infinite",
+    #"beta.mixture.infinite",
     "lil.variance",
-    "bayesian.beta",
-    "glrt.horizon", 
-    "one.vs.rest.beta.mixture", 
+    #"bayesian.beta",
+    #"glrt.horizon", 
+    #"one.vs.rest.beta.mixture", 
     "betabinom.pmf"
 ]
 
@@ -31,7 +34,7 @@ target_test_modes = [
 active_bandit_bounds = list(bandit_bounds.keys())
 
 # 3. Define the core selection primitives to evaluate
-base_non_bandit_modes = ["beta.med", "beta.max", "evar"]
+base_non_bandit_modes = ["beta.med", "equal", "ts", "ts.5", "means", "mean.slow"]#["beta.med", "beta.max", "evar"]
 bandit_allocation_mechanisms = ["bandit.max"]#, "bandit.ratio"] # "bandit.max" , "bandit.ratio"
 
 
@@ -71,6 +74,7 @@ def build_and_plot_merged_end_power(evaluation_queue):
             processed = plot_utils.load_and_process_results(file_path, target_test_mode)
             if processed is None:
                 print(f"Warning: No results found for {dummy_conf.get_test_name()}, skipping this configuration.")
+                print(dummy_conf.selection_mode, dummy_conf.test_mode)
                 continue
                 
             test_decision, num_reps, num_iters = processed
@@ -106,7 +110,7 @@ def build_and_plot_merged_end_power(evaluation_queue):
         return
 
     # Initialize a clean, wide canvas layout 
-    fig, ax = plt.subplots(figsize=(12, 6), dpi=300)
+    fig, ax = plt.subplots(figsize=(8, 5), dpi=300)
     
     # Track the exact unique sorted labels seen in the dataset to calculate spacing lanes
     distinct_labels = list(unique_labels.keys())
@@ -155,15 +159,25 @@ def build_and_plot_merged_end_power(evaluation_queue):
 
     # Labels and Structural styling adjustments
     ax.set_title(
-        f"Terminal Selection Power Comparison Across Anytime Tests ($N={n}$)", 
+        "End Power across Tests by Selection Strategy \n"
+        rf"($K={n}, M={m}, p = {common_p}, \Delta p={p_diff}$ at $T={max_iterations}$)", 
         fontsize=13, fontweight='bold', pad=15
     )
-    ax.set_ylabel(r"End Statistical Power ($power[-1]$)", fontsize=11, labelpad=8)
-    ax.set_xlabel("Anytime Test Type", fontsize=11, labelpad=8)
+    ax.set_ylabel(r"End Power ($1 - \beta$)", fontsize=11, labelpad=8)
+    ax.set_xlabel("Applied Tests", fontsize=11, labelpad=8)
     
     # Enforce strict axis ticks sequence mapping back to the targeted tests labels
     ax.set_xticks(x_base_indices)
-    ax.set_xticklabels(ordered_display_names, rotation=30, ha='right', fontsize=9)
+    labels = ax.set_xticklabels(ordered_display_names, rotation=20, ha='center', fontsize=9)
+    
+    # 2. Create a horizontal translation (e.g., -6 points left, 0 points vertically)
+    #    72 points = 1 inch
+    left_shift = mtransforms.ScaledTranslation(-8 / 72, 0, fig.dpi_scale_trans)
+
+    # 3. Apply the shift to each label
+    for label in labels:
+        label.set_transform(label.get_transform() + left_shift)
+
     ax.set_xlim(-0.5, num_tests - 0.5)
     ax.set_ylim(-0.02, 1.02)
     
@@ -171,14 +185,13 @@ def build_and_plot_merged_end_power(evaluation_queue):
     plt.grid(axis='x', linestyle='--', alpha=0.5, zorder=0)
 
     # Use your module scatter helper for legendary formatting layout adjustments
-    apply_scatter_legend(ax)
+    apply_scatter_legend(ax, bbox_to_anchor=(1, -0.04), title = "Selection Modes:")
     
     makedirs(plot_utils.SAVE_PATH, exist_ok=True)
-    plt.savefig(
-        f"{plot_utils.SAVE_PATH}/merged_selection_end_power_n{n}.png", 
-        bbox_inches='tight'
-    )
-    print("Unified terminal end power plot completely rendered.")
+    plot_name = "power_over_tests_by_selections"
+    plot_utils.save_fig(fig, plot_name, plot_utils.SAVE_PATH, "svg")
+    plot_utils.save_fig(fig, plot_name, plot_utils.SAVE_PATH, "png")
+    print(f"Plot completely rendered: {plot_name}.")
 
 
 if __name__ == "__main__":
@@ -187,7 +200,7 @@ if __name__ == "__main__":
     # Programmatically combine the layers without manual pairing entries
     evaluation_queue = plot_utils.merge_selection_kinds(base_non_bandit_modes, bandit_allocation_mechanisms, active_bandit_bounds)
 
-    plot_utils.SELECTION_PALETTE = plot_utils.generate_minimal_palette_map(plot_utils.SELECTION_GROUPS, evaluation_queue)
+    #plot_utils.SELECTION_PALETTE = plot_utils.generate_minimal_palette_map(plot_utils.SELECTION_GROUPS, evaluation_queue)
 
     # Call the new merged visual processing graph compilation pipeline function
     build_and_plot_merged_end_power(evaluation_queue)

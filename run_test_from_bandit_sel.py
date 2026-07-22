@@ -10,7 +10,7 @@ if __name__ == "__main__":
     for n in [20]: # [5, 10, 15, 20]
         for mode in ["bandit.max", "bandit.ratio"]:# "opt", "beta.med", "ts.5", "ts", "equal", "beta", "means", "mean.slow"
             for bandit in bandit_bounds.keys():
-                for test_mode in ["hoeffding.variance.infinite", "lil.variance", "glrt.horizon", "one.vs.rest.beta.mixture", "beta.mixture.infinite", "betting.e.variable", "bayesian.beta", "betabinom.pmf"]:
+                for test_mode in ["kl.horizon", "bayesian.e.variable","hoeffding.variance.infinite", "lil.variance", "glrt.horizon", "one.vs.rest.beta.mixture", "beta.mixture.infinite", "betting.e.variable", "betabinom.pmf"]:
                     for m in [1]: # 0, 1, 2, int(n/2)
                         for p in [0.5]:
                             conf = Config(
