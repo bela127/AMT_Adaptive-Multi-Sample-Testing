@@ -99,7 +99,7 @@ if __name__ == "__main__":
     if plotted_any:
         ax.set_title(
             f"Power of Bandits with Matching Bandit Selection vs. Adaptive Approaches with Selection {plot_utils.resolve_selection_metadata("beta.med")[0]}\n"
-            f"($K={n}$, $M={m}$, $p={common_p}$, $\\Delta p={p_diff}$, $T={max_iterations}$)", 
+            f"($K={n}$, $M={m}$, $p={common_p}$, $\\Delta p={p_diff}$)", 
             fontsize=13, fontweight='bold', pad=15
         )
         ax.set_xlabel("Sample Time ($t$)", fontsize=11, labelpad=8)

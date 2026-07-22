@@ -21,16 +21,12 @@ if __name__ == "__main__":
     load_path_dir = "./exp_results/test_res/vari_m"
     makedirs(plot_utils.SAVE_PATH, exist_ok=True)
 
-    fig, ax = plt.subplots(figsize=(12, 6), dpi=300)
+    fig, ax = plt.subplots(figsize=(11, 5), dpi=300)
     plotted_any = False  
     group_counters = {g_key: 0 for g_key in plot_utils.TEST_PALETTE.keys()}
     line_index = 0
 
     manual_label_overrides = {
-        "betabinom.pmf": "BetaBinom PMF",
-        "betabinom.comb": "BetaBinom Combined",
-        "kw": "Kruskal-Wallis",
-        "chi2": "Chi-Squared",
         "mean": "Empirical Mean",
         "beta": "Beta Mixture"
     }
@@ -68,12 +64,17 @@ if __name__ == "__main__":
             plotted_any = True
 
     if plotted_any:
-        ax.set_title(f"Final Empirical Power vs. Number of Plated Coins $M$\n(Selection: `{sel_mode}`, $N={n}$, $\\Delta p={default_p_diff}$ at $t={max_iterations}$)", fontsize=13, fontweight='bold', pad=15)
-        ax.set_xlabel("Number of Plated Coins ($M$)", fontsize=11, labelpad=8)
-        ax.set_ylabel("Statistical Power ($1 - \\beta$)", fontsize=11, labelpad=8)
+        ax.set_title(f"End Power over Number of Deviant Conditions $M$\n"
+                     f"($K={n}$, $p={default_common_p}$, $\\Delta p={default_p_diff}$ at $T={max_iterations}$)", fontsize=13, fontweight='bold', pad=15)
+        ax.set_xlabel("Number of Deviant Conditions ($M$)", fontsize=11, labelpad=8)
+        ax.set_ylabel("End Power ($1 - \\beta$)", fontsize=11, labelpad=8)
         ax.set_ylim(-0.02, 1.02)
         ax.set_xticks(m_values) 
         ax.set_xlim(min(m_values) - 0.5, max(m_values) + 0.5)
         plot_utils.apply_standard_legend(ax)
-        plt.savefig(f"{plot_utils.SAVE_PATH}/final_power_by_m_{sel_mode}_comparison.png", bbox_inches='tight')
+
+
+        save_name = "power_over_m"
+        plot_utils.save_fig(fig, save_name, plot_utils.SAVE_PATH, "svg")
+        plot_utils.save_fig(fig, save_name, plot_utils.SAVE_PATH, "png")
         plt.close()

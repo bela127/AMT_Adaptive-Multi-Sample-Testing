@@ -24,7 +24,7 @@ if __name__ == "__main__":
     sns.set_theme(style="whitegrid")
     makedirs(plot_utils.SAVE_PATH, exist_ok=True)
     
-    fig, ax = plt.subplots(figsize=(12, 6), dpi=300)
+    fig, ax = plt.subplots(figsize=(11, 5), dpi=300)
     plotted_any = False  
     
     # Sequential palette for sweeping numerical hyperparameter values
@@ -84,12 +84,12 @@ if __name__ == "__main__":
         )
         
         ax.set_title(
-            f"Ablation Study: Empirical Type-I Error Rates Under Global Null ($m=0$)\n"
-            f"(Test: `{test_mode}`, Selection: `{sel_mode}`, $N={n}$, $H_0: p_i = {common_p}$)", 
+            f"Type-I Error Rate over Sample Time by $\\alpha_c$ for {plot_utils.resolve_test_metadata(test_mode)[0]} and {plot_utils.resolve_selection_metadata(sel_mode)[0]}\n"
+            f"($K={n}$, $M={m}$, $p={common_p}$, $\\Delta p={p_diff}$)", 
             fontsize=13, fontweight='bold', pad=15
         )
-        ax.set_xlabel("Sequential Sample Observations ($t$)", fontsize=11, labelpad=8)
-        ax.set_ylabel("False Positive Rate (Empirical $\\alpha$)", fontsize=11, labelpad=8)
+        ax.set_xlabel("Sample Time ($t$)", fontsize=11, labelpad=8)
+        ax.set_ylabel("Type-I Error Rate ($\\alpha$)", fontsize=11, labelpad=8)
         
         # Zoom Y-axis focus to target_alpha context
         ax.set_ylim(-0.005, target_alpha * 2.5)
@@ -97,7 +97,8 @@ if __name__ == "__main__":
         
         plot_utils.apply_standard_legend(ax)
         
-        save_name = f"ablation_alpha_c_error_m0_n{n}_{sel_mode}_{test_mode.replace('.', '_')}.png"
-        plt.savefig(f"{plot_utils.SAVE_PATH}/{save_name}", bbox_inches='tight')
+        save_name = "ablation_alpha_over_alpha_c"
+        plot_utils.save_fig(fig, save_name, plot_utils.SAVE_PATH, "svg")
+        plot_utils.save_fig(fig, save_name, plot_utils.SAVE_PATH, "png")
         plt.close()
         print(f"Saved Type-I Error curve plot: {save_name}")

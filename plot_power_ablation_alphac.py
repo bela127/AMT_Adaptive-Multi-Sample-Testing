@@ -23,7 +23,7 @@ if __name__ == "__main__":
     sns.set_theme(style="whitegrid")
     makedirs(plot_utils.SAVE_PATH, exist_ok=True)
     
-    fig, ax = plt.subplots(figsize=(12, 6), dpi=300)
+    fig, ax = plt.subplots(figsize=(11, 5), dpi=300)
     plotted_any = False  
     
     # Sequential palette for sweeping numerical hyperparameter values
@@ -72,18 +72,19 @@ if __name__ == "__main__":
 
     if plotted_any:
         ax.set_title(
-            f"Ablation Study: Empirical Power under Alternative Hypothesis $H_1$ ($m=1$)\n"
-            f"(Test: `{test_mode}`, Selection: `{sel_mode}`, $N={n}$)", 
+            f"Power over Sample Time by $\\alpha_c$ for {plot_utils.resolve_test_metadata(test_mode)[0]} and {plot_utils.resolve_selection_metadata(sel_mode)[0]}\n"
+            f"($K={n}$, $M={m}$, $p={common_p}$, $\\Delta p={p_diff}$)", 
             fontsize=13, fontweight='bold', pad=15
         )
-        ax.set_xlabel("Sequential Sample Observations ($t$)", fontsize=11, labelpad=8)
-        ax.set_ylabel("Statistical Power ($1 - \\beta$)", fontsize=11, labelpad=8)
+        ax.set_xlabel("Sample Time ($t$)", fontsize=11, labelpad=8)
+        ax.set_ylabel("Power ($1 - \\beta$)", fontsize=11, labelpad=8)
         ax.set_ylim(-0.02, 1.02)
         ax.set_xlim(0, max_iterations)
         
         plot_utils.apply_standard_legend(ax)
         
-        save_name = f"ablation_alpha_c_power_m1_n{n}_{sel_mode}_{test_mode.replace('.', '_')}.png"
-        plt.savefig(f"{plot_utils.SAVE_PATH}/{save_name}", bbox_inches='tight')
+        save_name = "ablation_power_over_alpha_c"
+        plot_utils.save_fig(fig, save_name, plot_utils.SAVE_PATH, "svg")
+        plot_utils.save_fig(fig, save_name, plot_utils.SAVE_PATH, "png")
         plt.close()
         print(f"Saved power curve plot: {save_name}")
