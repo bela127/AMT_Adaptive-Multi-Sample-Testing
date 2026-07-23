@@ -6,7 +6,7 @@ import numpy as np
 import seaborn as sns
 
 import matplotlib as mpl
-from matplotlib.legend_handler import HandlerPathCollection
+import matplotlib.lines as mlines
 
 mpl.rcParams['text.usetex'] = True
 # Replace default preamble to omit type1cm
@@ -197,10 +197,16 @@ def apply_standard_legend(ax, bbox_to_anchor=(0.5, -0.13), ncol = 4):
         numpoints=1         
     )
 
-from matplotlib.legend_handler import HandlerTuple
-import matplotlib.lines as mlines
 
-def apply_scatter_legend(ax, bbox_to_anchor=(0.5, -0.15), title=None, left_pad_pts=1):
+
+def apply_scatter_legend(ax,
+                         bbox_to_anchor=(0.5, -0.15),
+                         title=None,
+                         left_pad_pts=1,
+                         ncol = 1,
+                         alignment='left',
+                         loc="lower left"
+                        ):
     """
     Erstellt eine Legende mit explizitem Abstand VOR dem Marker-Symbol.
     """
@@ -218,10 +224,10 @@ def apply_scatter_legend(ax, bbox_to_anchor=(0.5, -0.15), title=None, left_pad_p
         handles=padded_handles,
         labels=labels,
         title=title,
-        alignment='left',
-        loc="lower left",
+        alignment=alignment,
+        loc=loc,
         bbox_to_anchor=bbox_to_anchor,
-        ncol=1,
+        ncol=ncol,
         fontsize=9,
         frameon=True,
         facecolor='#fafafa',
